@@ -1,10 +1,9 @@
-``` YAML
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Sale Detection API",
+    "title": "SaleCheck API",
     "version": "1.0.0",
-    "description": "API for detecting the presence of sales in HTML content."
+    "description": "API for detecting sales and tracking sale streaks for potential violations."
   },
   "paths": {
     "/analyse/HTML/": {
@@ -72,8 +71,8 @@
           }
         }
       }
-    }
-	"/analyse/salestreak/": {
+    },
+    "/analyse/salestreak/": {
       "get": {
         "summary": "Get sale streak data",
         "description": "Returns a list of companies with their current sale streak and violation status.",
@@ -141,4 +140,3 @@
     }
   }
 }
-```
