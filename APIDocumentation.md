@@ -73,7 +73,7 @@
         }
       }
     }
-"/analyse/salestreak/": {
+	"/analyse/salestreak/": {
       "get": {
         "summary": "Get sale streak data",
         "description": "Returns a list of companies with their current sale streak and violation status.",
@@ -139,6 +139,6 @@
         }
       }
     }
-}
+  }
 }
 ```
