@@ -1,4 +1,3 @@
-```YAML
 {
   "openapi": "3.0.0",
   "info": {
@@ -73,8 +72,72 @@
         }
       }
     }
-  }
+"/analyse/salestreak/": {
+      "get": {
+        "summary": "Get sale streak data",
+        "description": "Returns a list of companies with their current sale streak and violation status.",
+        "responses": {
+          "200": {
+            "description": "A list of companies and their sale streaks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "websiteName": {
+                        "type": "string",
+                        "description": "Name of the company's website"
+                      },
+                      "saleStreak": {
+                        "type": "integer",
+                        "description": "Number of consecutive days the company has been running a sale"
+                      },
+                      "violation": {
+                        "type": "boolean",
+                        "description": "True if sale streak exceeds 14 days, indicating a potential violation"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "websiteName": "example.com",
+                    "saleStreak": 16,
+                    "violation": true
+                  },
+                  {
+                    "websiteName": "anothersite.com",
+                    "saleStreak": 10,
+                    "violation": false
+                  }
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 }
-
-```
+}
 
