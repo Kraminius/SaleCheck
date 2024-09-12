@@ -138,7 +138,95 @@
           }
         }
       }
+    },
+    "/analyse/salestreak/{company}": {
+      "get": {
+        "summary": "Get sale streak for a specific company",
+        "description": "Returns the sale streak and violation status for a specific company based on the company URL.",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "description": "The company's website name (URL) to check the sale streak",
+            "schema": {
+              "type": "string"
+            },
+            "example": "example.com"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sale streak data for the specific company",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "websiteName": {
+                      "type": "string",
+                      "description": "Name of the company's website"
+                    },
+                    "saleStreak": {
+                      "type": "integer",
+                      "description": "Number of consecutive days the company has been running a sale"
+                    },
+                    "violation": {
+                      "type": "boolean",
+                      "description": "True if sale streak exceeds 14 days, indicating a potential violation"
+                    }
+                  }
+                },
+                "example": {
+                  "websiteName": "example.com",
+                  "saleStreak": 16,
+                  "violation": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Company not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message indicating that the company could not be found"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Company not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
+
 ```
