@@ -1,0 +1,6 @@
+@SaleCheck_HostAddress = http://localhost:5114
+
+GET {{SaleCheck_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
