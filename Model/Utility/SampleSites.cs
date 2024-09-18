@@ -11,4 +11,5 @@ public static class SampleSites
         "https://www.xl-byg.dk/" 
     ];
     public static readonly string Sitemap = "https://vinduesgrossisten.dk/pub/sitemap/sitemap_dk.xml";
+    public static readonly string ProductSite = "https://vinduesgrossisten.dk/vinduer/euroline/dreje-kip-vinduer";
 }
