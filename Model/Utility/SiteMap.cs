@@ -20,6 +20,11 @@ public class SiteMap(string url)
         }
     }
 
+    public string GetLink()
+    {
+        return url;
+    }
+
     public List<Page> GetPages()
     {
         return _siteMaps;
