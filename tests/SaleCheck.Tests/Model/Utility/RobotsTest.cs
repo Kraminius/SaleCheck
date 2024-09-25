@@ -6,7 +6,7 @@ using SaleCheck.Model.Utility;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SaleCheck.Tests.Model.Utility
+namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
 {
     [TestSubject(typeof(Robots))]
     public class RobotsTest

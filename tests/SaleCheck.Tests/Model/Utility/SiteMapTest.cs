@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 using SaleCheck.Model.Utility;
 using Xunit;
 
-namespace SaleCheck.Tests.Model.Utility;
+namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility;
 
 [TestSubject(typeof(SiteMap))]
 public class SiteMapTest
