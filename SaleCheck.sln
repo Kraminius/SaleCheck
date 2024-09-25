@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaleCheck", "SaleCheck.csproj", "{EA53DB35-0387-44D4-8C22-5B6E318F7B21}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaleCheck.Tests", "..\SaleCheck.Tests\SaleCheck.Tests.csproj", "{84DCAB4F-0376-44EC-BE6A-7137C7F7F13D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SaleCheck", "SaleCheck.csproj", "{EA53DB35-0387-44D4-8C22-5B6E318F7B21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{EA53DB35-0387-44D4-8C22-5B6E318F7B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA53DB35-0387-44D4-8C22-5B6E318F7B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA53DB35-0387-44D4-8C22-5B6E318F7B21}.Release|Any CPU.Build.0 = Release|Any CPU
-		{84DCAB4F-0376-44EC-BE6A-7137C7F7F13D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{84DCAB4F-0376-44EC-BE6A-7137C7F7F13D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{84DCAB4F-0376-44EC-BE6A-7137C7F7F13D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{84DCAB4F-0376-44EC-BE6A-7137C7F7F13D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
