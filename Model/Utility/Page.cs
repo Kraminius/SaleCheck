@@ -1,10 +1,14 @@
 ﻿
 
+using System.Text.RegularExpressions;
+
 namespace SaleCheck.Model.Utility;
 
 public class Page(string url)
 {
     private string? _htmlContent;
+    
+    private List<Page> hrefs = new List<Page>();
     private async Task<string> LoadHtmlContentAsync()
     {
         HttpClientHandler handler = new HttpClientHandler { AllowAutoRedirect = true };
@@ -33,6 +37,41 @@ public class Page(string url)
     {
         if (_htmlContent == null) _htmlContent = await LoadHtmlContentAsync();
         return _htmlContent;
+    }
+
+    public async Task<List<Page>> GetHrefs()
+    {
+        if (hrefs.Count == 0)
+        {
+            List<string> urls = new List<string>();
+            urls = await LoadHrefs();
+            foreach (string url in urls)
+            {
+                hrefs.Add(new Page(url));
+            }
+        }
+        return hrefs;
+    }
+
+    public async Task<List<string>> LoadHrefs()
+    {
+        hrefs = new List<Page>();
+        string? content = await GetHtmlContent();
+        if (content == null) return new List<string>();
+
+        // Regular expression to match href links
+        string pattern = @"href\s*=\s*[""']([^""']+)[""']";
+        
+        MatchCollection matches = Regex.Matches(content, pattern);
+        Console.WriteLine($"Found {matches.Count} matches");
+        List<string> links = new List<string>();
+        foreach (Match match in matches)
+        {
+            string url = match.Groups[1].Value;
+            links.Add(url);
+        }
+
+        return links;
     }
 
     public string GetUrl()

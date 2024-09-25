@@ -37,6 +37,7 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             Robots robots = new Robots(website);
             List<SiteMap> sitemaps = await robots.GetSiteMaps();
             int totalPages = 0;
+            int hrefPages = 0;
             foreach (SiteMap siteMap in sitemaps)              
             {
                 _output.WriteLine("----------------------------");
@@ -52,11 +53,15 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
                     _output.WriteLine("Loading Page: " + page.GetUrl());
                     string htmlContent = await page.GetHtmlContent();
                     if (htmlContent == null) continue;
+                    List<Page> hrefs = await page.GetHrefs();
+                    hrefPages += hrefs.Count;
+                    _output.WriteLine("Href Pages in Page: " + hrefs.Count.ToString());
                     // TODO scrape the html for useful products and save them to a database.
-                    
+
                 }
             }
             _output.WriteLine("Total Pages: " + totalPages);
+            _output.WriteLine("Total Href Pages: " + hrefPages);
         }
     }
 }
