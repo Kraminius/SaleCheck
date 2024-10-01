@@ -4,7 +4,7 @@ using SaleCheck.Model.DataClasses;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace SaleCheck.Model
+namespace SaleCheck.Model.DataClasses
 {
     public class Product
     {

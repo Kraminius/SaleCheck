@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using SaleCheck.Model;
+using SaleCheck.Model.DataClasses;
 
 namespace SaleCheck.Controllers
 {
