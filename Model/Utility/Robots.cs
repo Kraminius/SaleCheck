@@ -55,4 +55,35 @@ public class Robots(string url)
 
         return sitemapLinks.ToArray();
     }
+
+    public async Task<List<Page>> GetAllOriginalPages()
+    {
+        List<string> allPageURls = new List<string>();
+        List<SiteMap> sitemaps = await GetSiteMaps();
+        foreach (SiteMap siteMap in sitemaps)              
+        {
+            await siteMap.LoadSiteMapsAsync();
+            List<Page> siteMapPages = siteMap.GetPages();
+            foreach (Page page in siteMapPages)
+            {
+                if(!allPageURls.Contains(page.GetUrl())) 
+                    allPageURls.Add(page.GetUrl());
+                string htmlContent = await page.GetHtmlContent();
+                if (htmlContent == null) continue;
+                List<Page> hrefs = await page.GetHrefs();
+                // TODO scrape the html for useful products and save them to a database.
+                foreach (Page href in hrefs)
+                {
+                    if(!allPageURls.Contains(href.GetUrl())) 
+                        allPageURls.Add(href.GetUrl());
+                }
+            }
+        }
+        List<Page> allPages = new List<Page>();
+        foreach (string pageUrl in allPageURls)
+        {
+            allPages.Add(new Page(pageUrl));
+        }
+        return allPages;
+    }
 }

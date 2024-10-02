@@ -12,5 +12,5 @@ public static class SampleSites
     ];
     public static readonly string Sitemap = "https://vinduesgrossisten.dk/pub/sitemap/sitemap_dk.xml";
     public static readonly string ProductSite = "https://vinduesgrossisten.dk/vinduer/euroline/dreje-kip-vinduer";
-    
+    public static readonly string SingleProductSite = "https://vinduesgrossisten.dk/tr/sidehaengt-vindue-2-fags";
 }

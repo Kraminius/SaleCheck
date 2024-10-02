@@ -35,6 +35,7 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             _output.WriteLine("Loading pages from Link: " + website);
             _output.WriteLine("############################");
             Robots robots = new Robots(website);
+            List<string> allPages = new List<string>();
             List<SiteMap> sitemaps = await robots.GetSiteMaps();
             int totalPages = 0;
             int hrefPages = 0;
@@ -47,21 +48,58 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
                 List<Page> siteMapPages = siteMap.GetPages();
                 Assert.NotEmpty(siteMapPages);
                 totalPages += siteMapPages.Count;
-                _output.WriteLine("Pages in Sitemap: " + siteMapPages.Count.ToString());
                 foreach (Page page in siteMapPages)
                 {
-                    _output.WriteLine("Loading Page: " + page.GetUrl());
+                    if(!allPages.Contains(page.GetUrl())) 
+                        allPages.Add(page.GetUrl());
                     string htmlContent = await page.GetHtmlContent();
                     if (htmlContent == null) continue;
                     List<Page> hrefs = await page.GetHrefs();
                     hrefPages += hrefs.Count;
-                    _output.WriteLine("Href Pages in Page: " + hrefs.Count.ToString());
                     // TODO scrape the html for useful products and save them to a database.
-
+                    foreach (Page href in hrefs)
+                    {
+                        if(!allPages.Contains(href.GetUrl())) 
+                            allPages.Add(href.GetUrl());
+                    }
                 }
             }
             _output.WriteLine("Total Pages: " + totalPages);
             _output.WriteLine("Total Href Pages: " + hrefPages);
+            _output.WriteLine("Total Non-Duplicate Pages: " + allPages.Count.ToString());
+        }
+        
+        [Fact]
+        public async Task LoadAllProductsFromRobots()
+        {
+            string website = SampleSites.Links[0];
+            Robots robots = new Robots(website);
+            _output.WriteLine("Created Robots: " + website);
+            _output.WriteLine("Loading all pages... This takes about a minute.");
+            List<Page> pages = await robots.GetAllOriginalPages();
+            _output.WriteLine("Loaded All Pages: " + pages.Count);
+            Assert.NotEmpty(pages);
+            List<Product> products = new List<Product>();
+            int index = 0;
+            foreach (Page page in pages)
+            {
+                Product product = await page.GetProduct();
+                if (product != null)
+                {
+                    products.Add(product);
+                }
+                if(index%100 == 0) _output.WriteLine("From " + index + " pages: " + products.Count + " total products.");
+                index++;
+            }
+            _output.WriteLine("######## DONE #########" );
+            _output.WriteLine("Total Products: " + products.Count);
+
+            int discounted = 0;
+            foreach (Product product in products)
+            {
+                if(product.OtherPrice != null) discounted++;
+            }
+            _output.WriteLine("Total Discounted: " + discounted + "/" + products.Count);
         }
     }
 }
