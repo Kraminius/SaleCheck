@@ -10,7 +10,7 @@ namespace SaleCheck.Model.DataClasses
 
         [BsonId]
         [BsonRepresentation(BsonType.Int32)]
-        public required string WebsiteId { get; set; }
+        public required int WebsiteId { get; set; }
 
         [BsonElement("WebsiteUrl")]
         [Required(ErrorMessage = "Website URL is required.")]
