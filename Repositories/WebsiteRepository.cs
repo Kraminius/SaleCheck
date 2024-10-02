@@ -111,12 +111,121 @@ namespace SaleCheck.Repositories
             }
         }
 
-
         #endregion Website Operations
         
         #region Product Operations
         
-        //TODO: implement product operations
+        public async Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(int websiteId)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting products for website with ID: {websiteId}");
+                var website = await _websites.Find(w => w.WebsiteId == websiteId)
+                    .FirstOrDefaultAsync();
+                return website.Products;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred while getting products for website with ID: {websiteId}");
+                throw;
+            }
+        }
+        
+        public async Task<Product> GetProductByIdAsync(int websiteId, int productId)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting product with ID: {productId} for website with ID: {websiteId}");
+                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
+
+                if (website == null)
+                {
+                    _logger.LogWarning($"Website with ID: {websiteId} not found");
+                    throw new KeyNotFoundException($"Website with ID: {websiteId} not found");
+                }
+                
+                var product = website.Products.FirstOrDefault(p => p.ProductId == productId);
+
+                if (product == null)
+                {
+                    _logger.LogWarning($"Product with ID: {productId} not found");
+                    throw new KeyNotFoundException($"Product with ID: {productId} not found");
+                }
+
+                return product;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred while getting product with ID: {productId} for website with ID: {websiteId}");
+                throw;
+            }
+        }
+        
+        public async Task CreateProductAsync(int websiteId, Product product)
+        {
+            try
+            {
+                _logger.LogInformation($"Creating a new product for website ID: {websiteId}");
+                var update = Builders<Website>.Update.Push(w => w.Products, product);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Website with ID: {websiteId} not found for adding product.");
+                    throw new KeyNotFoundException($"Website with ID: {websiteId} not found.");
+                }
+                _logger.LogInformation("Product created successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while creating product for website ID: {websiteId}");
+                throw;
+            }
+        }
+        
+        public async Task UpdateProductAsync(int websiteId, int productId, Product product)
+        {
+            try
+            {
+                _logger.LogInformation($"Updating product ID: {productId} for website ID: {websiteId}");
+                var filter = Builders<Website>.Filter.Eq(w => w.WebsiteId, websiteId) &
+                             Builders<Website>.Filter.ElemMatch(w => w.Products, p => p.ProductId == productId);
+                var update = Builders<Website>.Update.Set(w => w.Products[-1], product);
+                var result = await _websites.UpdateOneAsync(filter, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Product ID: {productId} not found in website ID: {websiteId}.");
+                    throw new KeyNotFoundException($"Product ID: {productId} not found in website ID: {websiteId}.");
+                }
+                _logger.LogInformation("Product updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while updating product ID: {productId} for website ID: {websiteId}");
+                throw;
+            }
+        }
+
+        public async Task DeleteProductAsync(int websiteId, int productId)
+        {
+            try
+            {
+                _logger.LogInformation($"Deleting product ID: {productId} from website ID: {websiteId}");
+                var update = Builders<Website>.Update.PullFilter(w => w.Products, p => p.ProductId == productId);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Product ID: {productId} not found in website ID: {websiteId}.");
+                    throw new KeyNotFoundException($"Product ID: {productId} not found in website ID: {websiteId}.");
+                }
+                _logger.LogInformation("Product deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while deleting product ID: {productId} from website ID: {websiteId}");
+                throw;
+            }
+        }
         
         #endregion Product Operations
 
