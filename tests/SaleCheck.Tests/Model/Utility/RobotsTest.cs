@@ -79,15 +79,19 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             List<Page> pages = await robots.GetAllOriginalPages();
             _output.WriteLine("Loaded All Pages: " + pages.Count);
             Assert.NotEmpty(pages);
-            List<Product> products = new List<Product>();
+            Dictionary<string, Product> products = new Dictionary<string, Product>();
             int index = 0;
             foreach (Page page in pages)
             {
-                Product product = await page.GetProduct();
-                if (product != null)
+                List<Product> pageProducts = await page.GetProducts();
+                
+                
+                
+                foreach (Product product in pageProducts)
                 {
-                    products.Add(product);
+                    products.TryAdd(product.Id, product);
                 }
+                
                 if(index%100 == 0) _output.WriteLine("From " + index + " pages: " + products.Count + " total products.");
                 index++;
             }
@@ -95,9 +99,9 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             _output.WriteLine("Total Products: " + products.Count);
 
             int discounted = 0;
-            foreach (Product product in products)
+            foreach (var key in products.Keys)
             {
-                if(product.OtherPrice != null) discounted++;
+                if(products[key].OtherPrice != null) discounted++;
             }
             _output.WriteLine("Total Discounted: " + discounted + "/" + products.Count);
         }

@@ -44,14 +44,16 @@ public class PageTest
     [Fact]
     public async Task CanFindProduct()
     {
-        string website = SampleSites.SingleProductSite;        
+        string website = SampleSites.ProductSite;        
         Page page = new Page(website);
         string? content = await page.GetHtmlContent();
         Assert.NotNull(content);
-        Product product = await page.GetProduct();
+        List<Product> products = await page.GetProducts();
         _output.WriteLine("Length of content: " + content.Length);
-        Assert.NotNull(product);
-        if(product != null)
+        Assert.NotEmpty(products);
+        foreach (Product product in products)
+        {
             _output.WriteLine(product.ToString());
+        }
     }
 }

@@ -11,7 +11,7 @@ public class Page(string url, Page? parent = null)
     private string? _htmlContent;
     
     private List<Page> hrefs = new List<Page>();
-    private Product? product = null;
+    private List<Product> products = new List<Product>();
     private async Task<string?> LoadHtmlContentAsync()
     {
         HttpClientHandler handler = new HttpClientHandler { AllowAutoRedirect = true };
@@ -80,61 +80,17 @@ public class Page(string url, Page? parent = null)
         return links;
     }
 
-    public async Task<Product?> GetProduct()
+    public async Task<List<Product>> GetProducts()
     {
-        if(product == null) await LoadProduct();
-        return product;
+        if(products.Count == 0) await LoadProducts();
+        return products;
     }
 
-    private async Task LoadProduct()
+    private async Task LoadProducts()
     {
-        string? content = await GetHtmlContent();
-        if(content == null) return;
-        HtmlDocument doc = new HtmlDocument();
-        doc.LoadHtml(content);
-        //FINDING ID
-        string pattern = @"<div class=""product-info-price"">.*?data-product-id=""(\d+)""";
-        Match match = Regex.Match(content, pattern);
-        string productId = match.Success ? match.Groups[1].Value : "undefined";
-        //FINDING PRICE
-        string shownPrice = "no ids found"; //Default value if none is found
-        string? otherPrice = "no ids found";
-        string xpathQuery = "//*[@class='price-wrapper ']/*[contains(@class,'price')]";
-        var nodeList = doc.DocumentNode.SelectNodes(xpathQuery);
-        if (nodeList != null && nodeList.Count > 0)
-        {
-            shownPrice = nodeList[0].InnerText; //Gets the Inner Text of the first matching element
-            otherPrice = nodeList[0].GetAttributeValue("attr-price", null) ?? "none"; //Gets the attribute value of "attr-price" if it exists, otherwise null
-        }
-        //FINDING NAME
-        string patternCategory = @"<div class=""page-title"">.*?<h1 class=""product-category"" itemprop=""name"">\s*(.*?)\s*</h1>"; //category
-        string patternSku = @"<meta itemprop=""sku"" content=""(.*?)"""; //name
-        Match matchCategory = Regex.Match(content, patternCategory, RegexOptions.Singleline);
-        string? productCategory = matchCategory.Success ? matchCategory.Groups[1].Value.Trim() : null;
-        Match matchName = Regex.Match(content, patternSku, RegexOptions.Singleline);
-        string? productName = matchName.Success ? matchName.Groups[1].Value.Trim() : null;
-        string productFullName = productCategory != null && productName != null ? $"{productCategory} ({productName})" : "undefined";
-        //CREATE PRODUCT
-        if (productId == "undefined") return; //No product? don't add it. makes sense.
-        if (otherPrice == "none") otherPrice = null;
-        if(otherPrice == null) product = new Product(url, productFullName, productId, PriceParse(shownPrice));
-        else product = new Product(url, productFullName, productId, PriceParse(otherPrice), PriceParse(shownPrice));
+        products = await AnalysePage.Analyze(this);
     }
-    public static double PriceParse(string price)
-    {
-        var numericChars = new Regex(@"[^0-9,]", RegexOptions.Compiled);
-        var removeComma = new Regex(@"[.]", RegexOptions.Compiled);
-        string cleanedPrice = price.Contains("kr") ? numericChars.Replace(price, ""): removeComma.Replace(price, ",");
-        cleanedPrice = cleanedPrice.Trim();
-        if (double.TryParse(cleanedPrice, out double result))        {
-            return result;
-        }
-        else
-        {
-            throw new ArgumentException("Invalid price format: " + cleanedPrice);
-        }
-    }
-
+    
     public string GetUrl()
     {
         return url;

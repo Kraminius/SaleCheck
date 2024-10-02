@@ -5,23 +5,16 @@ using HtmlAgilityPack;
 
 namespace SaleCheck.Model.Utility 
 {
-    public class Product
+    public static class AnalysePage
     {
-        public string ProductId { get; set; }
-        public string Name { get; set; }
-        public string AdditionalDescription { get; set; }
-        public decimal Price { get; set; }
-        public decimal? DiscountPrice { get; set; }
-    }
-
-    public class AnalysePage
-    {
-        public List<Product> Analyze(string htmlContent)
+        public static async Task<List<Product>> Analyze(Page page)
         {
-            var products = new List<Product>();
+            List<Product> products = new List<Product>();
             var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(htmlContent);
-
+            string? content = await page.GetHtmlContent();
+            if (content == null) return new List<Product>();
+            htmlDoc.LoadHtml(content);
+            
             var productNodes = htmlDoc.DocumentNode.SelectNodes("//a[@class='product-info-link']");
 
             if (productNodes == null)
@@ -33,32 +26,34 @@ namespace SaleCheck.Model.Utility
             {
                 try
                 {
-                    var product = new Product();
 
                     // Extract Product ID
                     var priceBoxNode = productNode.SelectSingleNode(".//div[contains(@class, 'price-box')]");
-                    product.ProductId = priceBoxNode?.GetAttributeValue("data-product-id", "N/A") ?? "N/A";
+                    string productId = priceBoxNode?.GetAttributeValue("data-product-id", "N/A") ?? "N/A";
 
                     // Extract Product Name
                     var nameNode = productNode.SelectSingleNode(".//h3[@class='name']");
-                    product.Name = nameNode?.InnerText.Trim() ?? "N/A";
+                    string name = nameNode?.InnerText.Trim() ?? "N/A";
 
                     // Extract Additional Description
                     var descriptionNode = productNode.SelectSingleNode(".//p[@class='additional-description']");
-                    product.AdditionalDescription = descriptionNode?.InnerText.Trim() ?? "N/A";
-
+                    name += " " + descriptionNode?.InnerText.Trim() ?? "";
+                    
                     // Extract Prices
                     var priceNode = productNode.SelectSingleNode(".//div[@class='price']");
                     var priceText = priceNode?.InnerText.Trim() ?? "N/A";
-                    product.Price = ParsePrice(priceText);
-
+                    decimal price = ParsePrice(priceText);
+                    decimal otherPrice = -1;
                     var discountPriceNode = productNode.SelectSingleNode(".//div[contains(@class, 'price_oprice_with_discountld')]");
                     if (discountPriceNode != null)
                     {
                         var discountPriceText = discountPriceNode.InnerText.Trim();
-                        product.DiscountPrice = ParsePrice(discountPriceText);
+                        otherPrice = ParsePrice(discountPriceText);
                     }
-
+                    
+                    Product product = (otherPrice != -1) 
+                        ? new Product(page.GetUrl(), name, productId, price, otherPrice) 
+                        : new Product(page.GetUrl(), name, productId, price);
                     products.Add(product);
                 }
                 catch (Exception ex)
@@ -70,7 +65,7 @@ namespace SaleCheck.Model.Utility
             return products;
         }
 
-        private decimal ParsePrice(string priceText)
+        private static decimal ParsePrice(string priceText)
         {
             var cleanedPrice = priceText.Replace("kr.", "").Replace(" ", "").Trim();
             var normalizedPrice = cleanedPrice.Replace(".", "").Replace(",", ".");
@@ -85,7 +80,7 @@ namespace SaleCheck.Model.Utility
             }
         }
 
-        public string ReadHtmlFile(string filePath)
+        public static string ReadHtmlFile(string filePath)
         {
             try
             {

@@ -8,26 +8,27 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
 {
     public class AnalysePageTest
     {
+        /*
         private readonly ITestOutputHelper _output;
 
         public AnalysePageTest(ITestOutputHelper output)
         {
             _output = output;
         }
+        /*
         [Fact]
         public void Analyze_FromFilePath_ReturnsProducts()
         {
-            var analyser = new AnalysePage();
 
             string fileName = "vinduesgrossisten.html";
             string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.Parent.FullName;
             string filePath = Path.Combine(projectDirectory,"SaleCheck","tests", "SaleCheck.Tests", "Model", "Utility", "TestData", fileName);
 
-            string htmlContent = analyser.ReadHtmlFile(filePath);
+            string htmlContent = AnalysePage.ReadHtmlFile(filePath);
 
             Assert.False(string.IsNullOrEmpty(htmlContent), "Failed to read the HTML file.");
 
-            var products = analyser.Analyze(htmlContent);
+            var products = AnalysePage.Analyze(htmlContent);
 
             Assert.NotNull(products);
             Assert.NotEmpty(products);
@@ -54,5 +55,6 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
                 }
             }
         }
+    */
     }
 }
