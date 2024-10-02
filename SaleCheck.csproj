@@ -22,4 +22,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="tests\SaleCheck.Tests\Model\Utility\TestData\" />
+  </ItemGroup>
+
 </Project>
