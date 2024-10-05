@@ -1,13 +1,15 @@
 ﻿
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 
 namespace SaleCheck.Model.Utility;
 
-public class Page(string url, Page? parent = null)
+public class Page(string title, string url, Page? parent = null)
 {
+    private string _title = title;
     private string? _htmlContent;
     
     private List<Page> hrefs = new List<Page>();
@@ -24,19 +26,24 @@ public class Page(string url, Page? parent = null)
             client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
             client.DefaultRequestHeaders.Add("Accept-Language", "da-DK,da;q=0.5");
 
-            try
+            int tries = 1;
+            for (int i = 0; i < tries; i++)
             {
+                try
+                {
                 
-                HttpResponseMessage response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error: with {url}");
+                    Console.WriteLine(e.Message);
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error: with {url}");
-                Console.WriteLine(e.Message);
-                return "";
-            }
+            return "";
+            
         }
     }
     public async Task<string?> GetHtmlContent()
@@ -53,7 +60,7 @@ public class Page(string url, Page? parent = null)
             urls = await LoadHrefs();
             foreach (string url in urls)
             {
-                hrefs.Add(new Page(url, this));
+                hrefs.Add(new Page(_title, url, this));
             }
         }
         return hrefs;
@@ -82,13 +89,18 @@ public class Page(string url, Page? parent = null)
 
     public async Task<List<Product>> GetProducts()
     {
-        if(products.Count == 0) await LoadProducts();
+        if(products.Count == 0) await LoadProducts(ProductAnalyser.GetAnalyser(_title));
         return products;
     }
 
-    private async Task LoadProducts()
+    private async Task LoadProducts(IProductAnalyser? analyser)
     {
-        products = await AnalysePage.Analyze(this);
+        if (analyser == null)
+        {
+            Console.WriteLine("No analyser for this page");
+            return;
+        }
+        products = await analyser.Analyze(this);
     }
     
     public string GetUrl()

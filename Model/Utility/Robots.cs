@@ -2,60 +2,71 @@
 
 namespace SaleCheck.Model.Utility;
 
-public class Robots(string url)
+public class Robots(string title, string url)
 {
+    private Page? _page;
     private List<SiteMap> _siteMaps = new List<SiteMap>();
+    private Dictionary<string, Product> _products = new Dictionary<string, Product>();
     public async Task<List<SiteMap>> GetSiteMaps()
     {
         if (_siteMaps.Count == 0) await LoadSiteMaps();
         return _siteMaps;
     }
-    
+
+    public async Task<bool> LoadRobots()
+    {
+        _page = new Page(title, url + "robots.txt");
+        return (await _page.GetHtmlContent() != null);
+    }
     private async Task LoadSiteMaps()
     {
-        Page robots = new Page(url + "robots.txt");
-        string? html = await robots.GetHtmlContent();
+        if (_page == null) if(!await LoadRobots()) return; 
+        string? html = await _page.GetHtmlContent();
         if (html == null) return; //returns if none is found
-        string[] sitemapLinks = RegexMatchLinksFromHtml(html);
+        IProductAnalyser analyser = ProductAnalyser.GetAnalyser(title);
+        if (analyser == null) return;
+        string[] sitemapLinks = await analyser.RegexMatchLinksFromRobots(_page);
         _siteMaps = new List<SiteMap>();
         foreach (string sitemapLink in sitemapLinks)
         {
-            _siteMaps.Add(new SiteMap(sitemapLink));
+            _siteMaps.Add(new SiteMap(title, sitemapLink));
         }
     }
     
-    private string[] RegexMatchLinksFromHtml(string html)
+    
+
+    public async Task<List<Page>> GetAllSitemapPages()
     {
-        string pattern = @"Sitemap:\s*(https?://\S+|/\S+)";
-        MatchCollection matches = Regex.Matches(html, pattern);
-        List<string> sitemapLinks = new List<string>();
-
-        foreach (Match match in matches)
+        List<Page> allPages = new List<Page>();
+        List<SiteMap> sitemaps = await GetSiteMaps();
+        foreach (SiteMap siteMap in sitemaps)              
         {
-            string link = match.Groups[1].Value;
+            await siteMap.LoadSiteMapsAsync();
+            List<Page> siteMapPages = siteMap.GetPages();
+            allPages.AddRange(siteMapPages);
             
-            /*
-             Some robots.txt write their sitemap as /sitemap.xsl, 
-             while others use the whole link as https://website.dk/sitemap.xml
-             we therefore add the base url to the front of /sitemap to make sure we get links that can be used.
-             */
-            if (!link.StartsWith("http")) 
-            {
-                link = url.TrimEnd('/') + link;
-            }
-
-            // Skip link if it is not danish, other countries is not within our scope. (Only does something for pages who sell globally)
-            if (!link.Contains(".dk") && !link.Contains("da_dk"))
-            {
-                continue; 
-            }
-
-            sitemapLinks.Add(link);
         }
-
-        return sitemapLinks.ToArray();
+        return allPages;
     }
 
+    public async Task<Dictionary<string, Product>> GetAllProducts()
+    {
+        if(_products.Count == 0) await LoadProducts();
+        return _products;
+    }
+
+    private async Task LoadProducts()
+    {
+        List<Page> pages = await GetAllSitemapPages();
+        foreach (Page page in pages)
+        {
+            List<Product> products = await page.GetProducts();
+            foreach (Product product in products)
+            {
+                _products.TryAdd(product.Id, product);
+            }
+        }
+    }
     public async Task<List<Page>> GetAllOriginalPages()
     {
         List<string> allPageURls = new List<string>();
@@ -82,7 +93,7 @@ public class Robots(string url)
         List<Page> allPages = new List<Page>();
         foreach (string pageUrl in allPageURls)
         {
-            allPages.Add(new Page(pageUrl));
+            allPages.Add(new Page(title, pageUrl));
         }
         return allPages;
     }

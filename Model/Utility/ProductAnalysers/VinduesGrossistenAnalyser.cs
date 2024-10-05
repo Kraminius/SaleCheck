@@ -1,13 +1,64 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 
 namespace SaleCheck.Model.Utility 
 {
-    public static class AnalysePage
+    public class VinduesGrossistenAnalyser : IProductAnalyser
     {
-        public static async Task<List<Product>> Analyze(Page page)
+        public async Task<string[]> RegexMatchLinksFromRobots(Page page)
+        {
+            string html = await page.GetHtmlContent();
+            if (html == null) return new string[0];
+            string pattern = @"Sitemap:\s*(https?://\S+|/\S+)";
+            MatchCollection matches = Regex.Matches(html, pattern);
+            List<string> sitemapLinks = new List<string>();
+
+            foreach (Match match in matches)
+            {
+                string link = match.Groups[1].Value;
+            
+                /*
+                 Some robots.txt write their sitemap as /sitemap.xsl,
+                 while others use the whole link as https://website.dk/sitemap.xml
+                 we therefore add the base url to the front of /sitemap to make sure we get links that can be used.
+                 */
+                if (!link.StartsWith("http")) 
+                {
+                    link = page.GetUrl().TrimEnd('/') + link;
+                }
+
+                // Skip link if it is not danish, other countries is not within our scope. (Only does something for pages who sell globally)
+                if (!link.Contains(".dk") && !link.Contains("da_dk"))
+                {
+                    continue; 
+                }
+
+                sitemapLinks.Add(link);
+            }
+
+            return sitemapLinks.ToArray();
+        }
+        public async Task<string[]> RegexMatchLinksFromSitemap(Page page)
+        {
+            string html = await page.GetHtmlContent();
+            if (html == null) return new string[0];
+            string pattern = @">https://[^\s<]+<";
+            MatchCollection matches = Regex.Matches(html, pattern);
+            List<string> links = new List<string>();
+
+            foreach (Match match in matches)
+            {
+                // Remove the wrapping '>' and '<'
+                string link = match.Value.Trim('>', '<');
+                links.Add(link);
+            }
+
+            return links.ToArray();
+        }
+        public async Task<List<Product>> Analyze(Page page)
         {
             List<Product> products = new List<Product>();
             var htmlDoc = new HtmlDocument();
@@ -26,7 +77,6 @@ namespace SaleCheck.Model.Utility
             {
                 try
                 {
-
                     // Extract Product ID
                     var priceBoxNode = productNode.SelectSingleNode(".//div[contains(@class, 'price-box')]");
                     string productId = priceBoxNode?.GetAttributeValue("data-product-id", "N/A") ?? "N/A";

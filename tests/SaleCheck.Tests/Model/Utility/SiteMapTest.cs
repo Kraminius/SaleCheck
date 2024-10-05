@@ -13,11 +13,12 @@ public class SiteMapTest
     [Fact]
     public async Task CanFindPagesOnSiteMap()
     {
-        string website = SampleSites.Sitemap;
-        SiteMap siteMap = new SiteMap(website);
-        await siteMap.LoadSiteMapsAsync();
-        
-        List<Page> pages = siteMap.GetPages();
+        string title =  SampleSites.VinduesGrossisten.Title;
+        string website = SampleSites.VinduesGrossisten.Link;
+        Robots robots = new Robots(title, website);
+        List<SiteMap> siteMap = await robots.GetSiteMaps();
+        await siteMap[0].LoadSiteMapsAsync();
+        List<Page> pages = siteMap[0].GetPages();
         Assert.NotEmpty(pages);
         
     }
