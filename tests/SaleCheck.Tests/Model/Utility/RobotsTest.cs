@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿
 using JetBrains.Annotations;
 using SaleCheck.Model.Utility;
 using Xunit;
@@ -21,47 +19,61 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
         [Fact]
         public async Task RobotsHasSiteMaps()
         {
-            string website = SampleSites.Links[0];
-            Robots robots = new Robots(website);
+            string title =  SampleSites.VinduesGrossisten.Title;
+            string website = SampleSites.VinduesGrossisten.Link;
+            Robots robots = new Robots(title, website);
             List<SiteMap> sitemaps = await robots.GetSiteMaps();
             Assert.NotEmpty(sitemaps);
         }
 
+        
         [Fact]
-        public async Task LoadAllPagesFromRobots()
+        public async Task LoadAllProductsFromSiteMapPages()
         {
-            string website = SampleSites.Links[0];
-            _output.WriteLine("############################");
-            _output.WriteLine("Loading pages from Link: " + website);
-            _output.WriteLine("############################");
-            Robots robots = new Robots(website);
-            List<SiteMap> sitemaps = await robots.GetSiteMaps();
-            int totalPages = 0;
-            int hrefPages = 0;
-            foreach (SiteMap siteMap in sitemaps)              
+            string title =  SampleSites.VinduesGrossisten.Title;
+            string website = SampleSites.VinduesGrossisten.Link;
+            Robots robots = new Robots(title, website);
+            _output.WriteLine("Created Robots: " + website);
+            _output.WriteLine("Loading all pages... This takes about a minute.");
+            List<Page> pages = await robots.GetAllSitemapPages();
+            _output.WriteLine("Loaded All Pages: " + pages.Count);
+            Assert.NotEmpty(pages);
+            Dictionary<string, Product> products = new Dictionary<string, Product>();
+            int index = 0;
+            foreach (Page page in pages)
             {
-                _output.WriteLine("----------------------------");
-                _output.WriteLine("Loading Sitemap from Link: " + siteMap.GetLink());
-                _output.WriteLine("----------------------------");
-                await siteMap.LoadSiteMapsAsync();
-                List<Page> siteMapPages = siteMap.GetPages();
-                Assert.NotEmpty(siteMapPages);
-                totalPages += siteMapPages.Count;
-                _output.WriteLine("Pages in Sitemap: " + siteMapPages.Count.ToString());
-                foreach (Page page in siteMapPages)
+                List<Product> pageProducts = await page.GetProducts();
+                
+                
+                
+                foreach (Product product in pageProducts)
                 {
-                    _output.WriteLine("Loading Page: " + page.GetUrl());
-                    string htmlContent = await page.GetHtmlContent();
-                    if (htmlContent == null) continue;
-                    List<Page> hrefs = await page.GetHrefs();
-                    hrefPages += hrefs.Count;
-                    _output.WriteLine("Href Pages in Page: " + hrefs.Count.ToString());
-                    // TODO scrape the html for useful products and save them to a database.
-
+                    products.TryAdd(product.Id, product);
                 }
+                
+                if(index%10 == 0) _output.WriteLine("From " + index + " pages: " + products.Count + " total products.");
+                index++;
             }
-            _output.WriteLine("Total Pages: " + totalPages);
-            _output.WriteLine("Total Href Pages: " + hrefPages);
+            _output.WriteLine("######## DONE #########" );
+            _output.WriteLine("Total Products: " + products.Count);
+
+            int discounted = 0;
+            foreach (var key in products.Keys)
+            {
+                if(products[key].OtherPrice != null) discounted++;
+            }
+            _output.WriteLine("Total Discounted: " + discounted + "/" + products.Count);
+        }
+
+        [Fact]
+        public async Task LoadAllProductsForSpecificWebsite()
+        {
+            string title =  SampleSites.VinduesGrossisten.Title;
+            string website = SampleSites.VinduesGrossisten.Link;
+            Robots robots = new Robots(title, website);
+            Dictionary<string, Product> products = await robots.GetAllProducts();
+            Assert.NotEmpty(products);
         }
     }
+    
 }

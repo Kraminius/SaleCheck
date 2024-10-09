@@ -2,15 +2,20 @@
 
 public static class SampleSites
 {
-    public static readonly string[] Links = [ 
-        "https://vinduesgrossisten.dk/", 
-        "https://www2.hm.com/", 
-        "https://www.jemogfix.dk/", 
-        "https://www.imerco.dk/", 
-        "https://www.bygma.dk/", 
-        "https://www.xl-byg.dk/" 
-    ];
-    public static readonly string Sitemap = "https://vinduesgrossisten.dk/pub/sitemap/sitemap_dk.xml";
-    public static readonly string ProductSite = "https://vinduesgrossisten.dk/vinduer/euroline/dreje-kip-vinduer";
-    
+    public static class Elgiganten
+    {
+        public static readonly string Link = "https://www.elgiganten.dk/";
+        public static readonly string Title = "elgiganten";
+
+        public static readonly string CateogrySite =
+            "https://www.elgiganten.dk/computer-kontor/computertilbehor/computer-holder";
+    }
+    public static class VinduesGrossisten
+    {
+        public static readonly string Link = "https://vinduesgrossisten.dk/";
+        public static readonly string Title = "vinduesgrossisten";
+        public static readonly string CateogrySite =
+            "https://vinduesgrossisten.dk/vinduer/scandiline/sidehaengte-vinduer";
+    }
+   
 }
