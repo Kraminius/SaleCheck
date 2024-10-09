@@ -3,8 +3,8 @@ using SaleCheck.Model.DataClasses;
 
 namespace SaleCheck.DataAccess.Interfaces
 {
-    public class IMongoDbContext
+    public interface IMongoDbContext
     {
-        public IMongoCollection<Website> Websites { get; }
+        IMongoCollection<Website> Websites { get; }
     }
 }

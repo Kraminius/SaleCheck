@@ -7,18 +7,17 @@ namespace SaleCheck.Model.DataClasses
 {
     public class Website
     {
-
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public required string WebsiteId { get; set; }
+        public string? WebsiteId { get; set; }
 
         [BsonElement("WebsiteUrl")]
         [Required(ErrorMessage = "Website URL is required.")]
-        public required string WebsiteUrl { get; set; }
+        public string WebsiteUrl { get; set; }
 
         [BsonElement("WebsiteName")]
         [Required(ErrorMessage = "Website name is required.")]
-        public required string WebsiteName { get; set; }
+        public string WebsiteName { get; set; }
 
         [BsonElement("Tags")]
         public List<string> Tags { get; set; } = new List<string>();
@@ -29,4 +28,5 @@ namespace SaleCheck.Model.DataClasses
         [BsonElement("Subsites")]
         public List<Subsite> Subsites { get; set; } = new List<Subsite>();
     }
+
 }

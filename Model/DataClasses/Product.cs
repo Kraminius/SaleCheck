@@ -8,11 +8,9 @@ namespace SaleCheck.Model.DataClasses
 {
     public class Product
     {
-
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        [Required(ErrorMessage = "No product ID detected.")]
-        public required string ProductId { get; set; }
+        public string? ProductId { get; set; }
 
         [BsonElement("ProductName")]
         [BsonIgnoreIfNull]
@@ -22,8 +20,8 @@ namespace SaleCheck.Model.DataClasses
         [Required]
         public List<Price> Price { get; set; } = new List<Price>();
 
-        // Old price and new price only present for ease of testing.
-        public required string OldPrice { get; set; }
-        public required string NewPrice { get; set; }
+        public string OldPrice { get; set; }
+        public string NewPrice { get; set; }
     }
+
 }
