@@ -15,12 +15,8 @@ public class SiteMap(string title, string url)
         IProductAnalyser analyser = ProductAnalyser.GetAnalyser(title);
         if (analyser == null) return;
         
-        string[] links = await analyser.RegexMatchLinksFromSitemap(_siteMap);
-        foreach (string link in links)
-        {
-            Console.WriteLine(link);
-            _siteMaps.Add(new Page(title, link));
-        }
+        List<Page> links = await analyser.GetSitemapLinks(_siteMap);
+        _siteMaps.AddRange(links);
     }
 
     public string GetLink()

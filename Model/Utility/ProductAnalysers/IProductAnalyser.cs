@@ -3,6 +3,6 @@
 public interface IProductAnalyser
 {
     public Task<List<Product>> Analyze(Page page);
-    public Task<string[]> RegexMatchLinksFromRobots(Page page);
-    public Task<string[]> RegexMatchLinksFromSitemap(Page page);
+    public Task<List<Page>> GetRobotsSitemapLink(Page page);
+    public Task<List<Page>> GetSitemapLinks(Page page);
 }

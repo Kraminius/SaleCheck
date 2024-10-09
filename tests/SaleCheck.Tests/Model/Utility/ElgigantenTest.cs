@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility;
 [TestSubject(typeof(Robots))]
-public class ElgigantenTest
+public class ElgigantenTest : IWebsiteTest
 {
     private readonly ITestOutputHelper _output;
 

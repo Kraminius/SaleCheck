@@ -1,20 +1,18 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 
-namespace SaleCheck.Model.Utility 
+namespace SaleCheck.Model.Utility.ProductAnalysers 
 {
     public class VinduesGrossistenAnalyser : IProductAnalyser
     {
-        public async Task<string[]> RegexMatchLinksFromRobots(Page page)
+        public async Task<List<Page>> GetRobotsSitemapLink(Page page)
         {
             string html = await page.GetHtmlContent();
-            if (html == null) return new string[0];
+            if (html == null) return new List<Page>();
             string pattern = @"Sitemap:\s*(https?://\S+|/\S+)";
             MatchCollection matches = Regex.Matches(html, pattern);
-            List<string> sitemapLinks = new List<string>();
+            List<Page> sitemapPages = new List<Page>();
 
             foreach (Match match in matches)
             {
@@ -36,28 +34,30 @@ namespace SaleCheck.Model.Utility
                     continue; 
                 }
 
-                sitemapLinks.Add(link);
+                sitemapPages.Add(new Page(SampleSites.VinduesGrossisten.Title, link));
             }
 
-            return sitemapLinks.ToArray();
+            return sitemapPages;
         }
-        public async Task<string[]> RegexMatchLinksFromSitemap(Page page)
+        
+        public async Task<List<Page>> GetSitemapLinks(Page page)
         {
             string html = await page.GetHtmlContent();
-            if (html == null) return new string[0];
+            if (html == null) return new List<Page>();
             string pattern = @">https://[^\s<]+<";
             MatchCollection matches = Regex.Matches(html, pattern);
-            List<string> links = new List<string>();
+            List<Page> pages = new List<Page>();
 
             foreach (Match match in matches)
             {
                 // Remove the wrapping '>' and '<'
                 string link = match.Value.Trim('>', '<');
-                links.Add(link);
+                pages.Add(new Page(SampleSites.VinduesGrossisten.Title,link));
             }
 
-            return links.ToArray();
+            return pages;
         }
+        
         public async Task<List<Product>> Analyze(Page page)
         {
             List<Product> products = new List<Product>();
@@ -120,7 +120,8 @@ namespace SaleCheck.Model.Utility
             var cleanedPrice = priceText.Replace("kr.", "").Replace(" ", "").Trim();
             var normalizedPrice = cleanedPrice.Replace(".", "").Replace(",", ".");
 
-            if (decimal.TryParse(normalizedPrice, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal priceValue))
+            if (decimal.TryParse(normalizedPrice, NumberStyles.Number, CultureInfo.InvariantCulture,
+                    out decimal priceValue))
             {
                 return priceValue;
             }
@@ -129,25 +130,7 @@ namespace SaleCheck.Model.Utility
                 throw new FormatException($"Unable to parse price: {priceText}");
             }
         }
-
-        public static string ReadHtmlFile(string filePath)
-        {
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    Console.WriteLine($"The file at '{filePath}' does not exist.");
-                    return null;
-                }
-
-                string htmlContent = File.ReadAllText(filePath);
-                return htmlContent;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred while reading the file: {ex.Message}");
-                return null;
-            }
-        }
     }
+    
+    
 }

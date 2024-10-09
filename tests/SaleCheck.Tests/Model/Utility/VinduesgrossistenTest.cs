@@ -76,6 +76,21 @@ public class VinduesgrossistenTest : IWebsiteTest
         Assert.NotEmpty(products);
         _output.WriteLine("products: " + products.Count);
     }
+    [Fact]
+    public async Task SaveAllProducts()
+    {
+        string title = SampleSites.VinduesGrossisten.Title;
+        string url = SampleSites.VinduesGrossisten.Link;
+        Robots robots = new Robots(title, url);
+        Dictionary<string, Product> products = await robots.GetAllProducts();
+        string dateString = DateTime.Now.ToString("dd-MM-yyyy");
+        string fileName = $"{dateString}-{title}.csv";
+
+        string filePath = Path.Combine("C:\\Users\\tobia\\OneDrive\\Skrivebord\\TestData", fileName); // Update the path as needed
+        
+        Assert.True(CSVExporter.SaveProductsToCsv(products, filePath));
+
+    }
 
 
 }

@@ -6,13 +6,13 @@ namespace SaleCheck.Model.Utility
 {
     public class ElgigantenAnalyser : IProductAnalyser
     {
-        public async Task<string[]> RegexMatchLinksFromRobots(Page page)
+        public async Task<List<Page>> GetRobotsSitemapLink(Page page)
         {
             string html = await page.GetHtmlContent();
-            if (html == null) return new string[0];
+            if (html == null) return new List<Page>();
             string pattern = @"Sitemap:\s*(https?://\S+|/\S+)";
             MatchCollection matches = Regex.Matches(html, pattern);
-            List<string> sitemapLinks = new List<string>();
+            List<Page> sitemapPages = new List<Page>();
 
             foreach (Match match in matches)
             {
@@ -34,15 +34,15 @@ namespace SaleCheck.Model.Utility
                     continue;
                 }
 
-                sitemapLinks.Add(link);
+                sitemapPages.Add(new Page(SampleSites.Elgiganten.Title, link));
             }
 
-            return sitemapLinks.ToArray();
+            return sitemapPages;
         }
-        public async Task<string[]> RegexMatchLinksFromSitemap(Page page)
+        public async Task<List<Page>> GetSitemapLinks(Page page)
         {
             string html = await page.GetHtmlContent();
-            if (html == null) return new string[0];
+            if (html == null) return new List<Page>();
             string pattern = @">https://[^\s<]+<";
             MatchCollection matches = Regex.Matches(html, pattern);
             List<string> links = new List<string>();
@@ -56,7 +56,7 @@ namespace SaleCheck.Model.Utility
 
             //There are two global sitemaps, one containing multiple sitemaps for images and another for actual sites.
             if (links.Count > 20)
-                return new string[0]; //We remove the sitemap for images because it has about 22 sitemaps.
+                return new List<Page>(); //We remove the sitemap for images because it has about 22 sitemaps.
 
             string categoryLink = "";
             foreach (string link in links)
@@ -67,22 +67,50 @@ namespace SaleCheck.Model.Utility
             Page categoryPage = new Page(SampleSites.Elgiganten.Title, categoryLink);
 
             html = await categoryPage.GetHtmlContent();
-            if (html == null) return new string[0];
+            if (html == null) return new List<Page>();
 
             // This pattern will capture only the URLs inside <loc> tags, excluding <image:loc>
             pattern = @"<loc>(https://[^\s<]+)</loc>";
 
             matches = Regex.Matches(html, pattern);
-            links = new List<string>();
-
+            List<Page> pages = new List<Page>();
             foreach (Match match in matches)
             {
                 // The actual link is in the first capturing group
                 string link = match.Groups[1].Value;
-                links.Add(link);
+                pages.Add(new Page(SampleSites.Elgiganten.Title,link));
             }
+            //We should then look for other pages of this... like https://www.elgiganten.dk/computer-kontor/computere has 10 next pages of the category.
+            List<Page> allPages = new List<Page>();
+            int max = 3;
+            int index = 0;
+            foreach (Page category in pages)
+            {
+                if (index >= max) break;
+                index++;
+                Page current = category;
+                
+                int next = 2;
+                while (true)
+                {
+                    string? currentHTML = await current.GetRenderedHtmlContent();
+                    allPages.Add(current);
+                    if(currentHTML == null) break;
+                    if (currentHTML.Contains("/page-" + next))
+                    {
+                        current = new Page(SampleSites.Elgiganten.Title, category.GetUrl() + "/page-" + next++);
+                    }
+                    else
+                    {
+                        allPages.Add(new Page("", "not here: " + currentHTML));
+                        break;
+                    }
+                    
+                }
 
-            return links.ToArray();
+            }
+            
+            return allPages;
         }
         public async Task<List<Product>> Analyze(Page page)
         {
@@ -91,13 +119,12 @@ namespace SaleCheck.Model.Utility
             string? content = await page.GetHtmlContent();
             if (content == null) return new List<Product>();
             htmlDoc.LoadHtml(content);
-
             // Select all product cards using the data-testid attribute
-            var productNodes = htmlDoc.DocumentNode.SelectNodes("//a[@data-type='product']");
+            var productNodes = htmlDoc.DocumentNode.SelectNodes("//li[@data-cro='product-item']/a");
 
             if (productNodes == null)
             {
-                products.Add(new Product("", "no product nodes found", "", 0, 0));
+                products.Add(new Product("", "no product nodes found", "\n\n" + content, 0, 0));
                 return products;
             }
 
@@ -144,7 +171,6 @@ namespace SaleCheck.Model.Utility
 
         private static decimal ParsePrice(string priceText)
         {
-            // Clean and normalize the price text for parsing
             var cleanedPrice = priceText.Replace(".", "").Replace(",", ".").Replace("-", "").Trim();
 
             if (decimal.TryParse(cleanedPrice, NumberStyles.Number, CultureInfo.InvariantCulture,

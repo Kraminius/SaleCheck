@@ -21,15 +21,15 @@ public class Robots(string title, string url)
     private async Task LoadSiteMaps()
     {
         if (_page == null) if(!await LoadRobots()) return; 
-        string? html = await _page.GetHtmlContent();
+        string? html = await _page.GetHtmlContent() ?? null;
         if (html == null) return; //returns if none is found
-        IProductAnalyser analyser = ProductAnalyser.GetAnalyser(title);
+        IProductAnalyser? analyser = ProductAnalyser.GetAnalyser(title) ?? null;
         if (analyser == null) return;
-        string[] sitemapLinks = await analyser.RegexMatchLinksFromRobots(_page);
+        List<Page> sitemapLinks = await analyser.GetRobotsSitemapLink(_page);
         _siteMaps = new List<SiteMap>();
-        foreach (string sitemapLink in sitemapLinks)
+        foreach (Page sitemapLink in sitemapLinks)
         {
-            _siteMaps.Add(new SiteMap(title, sitemapLink));
+            _siteMaps.Add(new SiteMap(title, sitemapLink.GetUrl()));
         }
     }
     
@@ -44,7 +44,6 @@ public class Robots(string title, string url)
             await siteMap.LoadSiteMapsAsync();
             List<Page> siteMapPages = siteMap.GetPages();
             allPages.AddRange(siteMapPages);
-            
         }
         return allPages;
     }
@@ -67,34 +66,5 @@ public class Robots(string title, string url)
             }
         }
     }
-    public async Task<List<Page>> GetAllOriginalPages()
-    {
-        List<string> allPageURls = new List<string>();
-        List<SiteMap> sitemaps = await GetSiteMaps();
-        foreach (SiteMap siteMap in sitemaps)              
-        {
-            await siteMap.LoadSiteMapsAsync();
-            List<Page> siteMapPages = siteMap.GetPages();
-            foreach (Page page in siteMapPages)
-            {
-                if(!allPageURls.Contains(page.GetUrl())) 
-                    allPageURls.Add(page.GetUrl());
-                string htmlContent = await page.GetHtmlContent();
-                if (htmlContent == null) continue;
-                List<Page> hrefs = await page.GetHrefs();
-                // TODO scrape the html for useful products and save them to a database.
-                foreach (Page href in hrefs)
-                {
-                    if(!allPageURls.Contains(href.GetUrl())) 
-                        allPageURls.Add(href.GetUrl());
-                }
-            }
-        }
-        List<Page> allPages = new List<Page>();
-        foreach (string pageUrl in allPageURls)
-        {
-            allPages.Add(new Page(title, pageUrl));
-        }
-        return allPages;
-    }
+    
 }

@@ -1,4 +1,4 @@
-﻿namespace SaleCheck.Model
+﻿namespace SaleCheck.Model.DataClasses
 {
     public class Product
     {

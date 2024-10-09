@@ -1,4 +1,6 @@
-﻿namespace SaleCheck.Model.Utility;
+﻿using SaleCheck.Model.Utility.ProductAnalysers;
+
+namespace SaleCheck.Model.Utility;
 
 public static class ProductAnalyser
 {
