@@ -58,12 +58,12 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
             return pages;
         }
         
-        public async Task<List<Product>> Analyze(Page page)
+        public async Task<List<ProductItem>> Analyze(Page page)
         {
-            List<Product> products = new List<Product>();
+            List<ProductItem> products = new List<ProductItem>();
             var htmlDoc = new HtmlDocument();
             string? content = await page.GetHtmlContent();
-            if (content == null) return new List<Product>();
+            if (content == null) return new List<ProductItem>();
             htmlDoc.LoadHtml(content);
             
             var productNodes = htmlDoc.DocumentNode.SelectNodes("//a[@class='product-info-link']");
@@ -101,10 +101,10 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                         otherPrice = ParsePrice(discountPriceText);
                     }
                     
-                    Product product = (otherPrice != -1) 
-                        ? new Product(page.GetUrl(), name, productId, price, otherPrice) 
-                        : new Product(page.GetUrl(), name, productId, price);
-                    products.Add(product);
+                    ProductItem productItem = (otherPrice != -1) 
+                        ? new ProductItem(page.GetUrl(), name, productId, price, otherPrice) 
+                        : new ProductItem(page.GetUrl(), name, productId, price);
+                    products.Add(productItem);
                 }
                 catch (Exception ex)
                 {

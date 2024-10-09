@@ -1,6 +1,6 @@
 ﻿namespace SaleCheck.Model.Utility;
 
-public class Product(string url, string name, string id, decimal price, decimal? otherPrice = null)
+public class ProductItem(string url, string name, string id, decimal price, decimal? otherPrice = null)
 {
     public string Url = url;
     public string Name = name;
@@ -14,7 +14,7 @@ public class Product(string url, string name, string id, decimal price, decimal?
         return $"{Name} : {Id} : nPrice:{Price}, dPrice: none";
     }
     
-    public bool Equals(Product obj)
+    public bool Equals(ProductItem obj)
     {
         return string.Equals(Id, obj.Id, StringComparison.OrdinalIgnoreCase);
     }

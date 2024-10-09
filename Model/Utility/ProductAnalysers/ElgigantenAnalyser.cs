@@ -86,6 +86,7 @@ namespace SaleCheck.Model.Utility
             int index = 0;
             foreach (Page category in pages)
             {
+                if(index++ < 1) continue;
                 if (index >= max) break;
                 index++;
                 Page current = category;
@@ -112,19 +113,19 @@ namespace SaleCheck.Model.Utility
             
             return allPages;
         }
-        public async Task<List<Product>> Analyze(Page page)
+        public async Task<List<ProductItem>> Analyze(Page page)
         {
-            List<Product> products = new List<Product>();
+            List<ProductItem> products = new List<ProductItem>();
             var htmlDoc = new HtmlDocument();
             string? content = await page.GetHtmlContent();
-            if (content == null) return new List<Product>();
+            if (content == null) return new List<ProductItem>();
             htmlDoc.LoadHtml(content);
             // Select all product cards using the data-testid attribute
             var productNodes = htmlDoc.DocumentNode.SelectNodes("//li[@data-cro='product-item']/a");
 
             if (productNodes == null)
             {
-                products.Add(new Product("", "no product nodes found", "\n\n" + content, 0, 0));
+                products.Add(new ProductItem("", "no product nodes found", "\n\n" + content, 0, 0));
                 return products;
             }
 
@@ -154,11 +155,11 @@ namespace SaleCheck.Model.Utility
                     }
 
                     // Create a product object based on whether a discount price exists
-                    Product product = (discountPrice != -1)
-                        ? new Product(page.GetUrl(), name, productId, price, discountPrice)
-                        : new Product(page.GetUrl(), name, productId, price);
+                    ProductItem productItem = (discountPrice != -1)
+                        ? new ProductItem(page.GetUrl(), name, productId, price, discountPrice)
+                        : new ProductItem(page.GetUrl(), name, productId, price);
 
-                    products.Add(product);
+                    products.Add(productItem);
                 }
                 catch (Exception ex)
                 {

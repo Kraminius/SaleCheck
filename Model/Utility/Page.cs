@@ -5,6 +5,9 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using Microsoft.Playwright;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
 
 namespace SaleCheck.Model.Utility;
 
@@ -15,7 +18,7 @@ public class Page(string title, string url, Page? parent = null)
     private string? _fully_rendered_htmlContent;
     
     private List<string> hrefs = new List<string>();
-    private List<Product> products = new List<Product>();
+    private List<ProductItem> products = new List<ProductItem>();
     
     
     private async Task<string?> LoadHtmlContentAsync()
@@ -48,46 +51,40 @@ public class Page(string title, string url, Page? parent = null)
         return "";
     }
 
-    public async Task LoadRenderedHtmlContentAsync()
+    public async Task<string> LoadRenderedHtmlContentAsync()
     {
-        // Initialize Playwright and launch Chromium in headless mode
-        var playwright = await Playwright.CreateAsync();
-        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        // Set ChromeDriver options
+        var options = new ChromeOptions();
+        options.AddArgument("--headless"); // Run in headless mode
+        options.AddArgument("--disable-gpu");
+        options.AddArgument("--window-size=1920,1080");
+
+        // Initialize WebDriver
+        using (IWebDriver driver = new ChromeDriver(options))
         {
-            Headless = true, // Set to false for debugging if needed
-            Args = new[] { "--disable-http2" } // Disable HTTP/2
-        });
-
-
-        var page = await browser.NewPageAsync();
-        // Set user agent to mimic a common browser
-
-// Optionally, set viewport size (can help avoid detection)
-        await page.SetViewportSizeAsync(1280, 720);
-
-        try
-        {
-            // Navigate to the URL and wait for the page to fully load
-            var response = await page.GotoAsync(url, new PageGotoOptions
+            // Navigate to the Elgiganten website
+            driver.Navigate().GoToUrl(url);
+            /*
+            // Optionally handle cookies or pop-ups
+            try
             {
-                WaitUntil = WaitUntilState.DOMContentLoaded, // Wait for the DOM to be loaded, not all resources
-                Timeout = 60000 // Keep 30 seconds timeout or increase as needed
-            });
+                // Wait for the cookie consent button and click it
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                IWebElement acceptCookiesButton = wait.Until(drv => drv.FindElement(By.Id("onetrust-accept-btn-handler")));
+                acceptCookiesButton.Click();
+            }
+            catch (WebDriverTimeoutException)
+            {
+                return "No Cookies" + driver.PageSource; 
+            }*/
 
-            // Extract the rendered HTML content
-            _fully_rendered_htmlContent = await page.ContentAsync();
-        }
-        catch (Exception e)
-        {
-            // In case of an error, set _htmlContent to the error message
-            _fully_rendered_htmlContent = $"Error: {e.Message}";
-        }
-        finally
-        {
-            // Ensure the browser is closed after use
-            await browser.CloseAsync();
+            await Task.Delay(10000); // Optional: wait for 2 seconds to ensure the page is fully loaded
+
+            // Return the rendered HTML content after clicking the button
+            return driver.PageSource;
         }
     }
+
 
 
     private async Task LoadRenderedHtmlContentAsyncOld()
@@ -130,7 +127,7 @@ public class Page(string title, string url, Page? parent = null)
     }
     public async Task<string?> GetRenderedHtmlContent()
     {
-        if(_fully_rendered_htmlContent == null) await LoadRenderedHtmlContentAsync();
+        if(_fully_rendered_htmlContent == null) _fully_rendered_htmlContent = await LoadRenderedHtmlContentAsync();
         return _fully_rendered_htmlContent;
     }
 
@@ -158,7 +155,7 @@ public class Page(string title, string url, Page? parent = null)
         }
     }
 
-    public async Task<List<Product>> GetProducts()
+    public async Task<List<ProductItem>> GetProducts()
     {
         if(products.Count == 0) await LoadProducts(ProductAnalyser.GetAnalyser(_title));
         return products;

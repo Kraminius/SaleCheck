@@ -59,8 +59,8 @@ public class VinduesgrossistenTest : IWebsiteTest
         string title = SampleSites.VinduesGrossisten.Title;
         string url = SampleSites.VinduesGrossisten.CateogrySite;
         Page page = new Page(title, url);
-        List<Product> products = await page.GetProducts();
-        foreach (Product product in products)
+        List<ProductItem> products = await page.GetProducts();
+        foreach (ProductItem product in products)
         {
             _output.WriteLine(product.ToString());
         }
@@ -72,7 +72,7 @@ public class VinduesgrossistenTest : IWebsiteTest
         string title = SampleSites.VinduesGrossisten.Title;
         string url = SampleSites.VinduesGrossisten.Link;
         Robots robots = new Robots(title, url);
-        Dictionary<string, Product> products = await robots.GetAllProducts();
+        Dictionary<string, ProductItem> products = await robots.GetAllProducts();
         Assert.NotEmpty(products);
         _output.WriteLine("products: " + products.Count);
     }
@@ -82,7 +82,7 @@ public class VinduesgrossistenTest : IWebsiteTest
         string title = SampleSites.VinduesGrossisten.Title;
         string url = SampleSites.VinduesGrossisten.Link;
         Robots robots = new Robots(title, url);
-        Dictionary<string, Product> products = await robots.GetAllProducts();
+        Dictionary<string, ProductItem> products = await robots.GetAllProducts();
         string dateString = DateTime.Now.ToString("dd-MM-yyyy");
         string fileName = $"{dateString}-{title}.csv";
 

@@ -4,7 +4,7 @@ namespace SaleCheck.Model.Utility;
 
 public static class CSVExporter
 {
-    public static bool SaveProductsToCsv(Dictionary<string, Product> products, string filePath)
+    public static bool SaveProductsToCsv(Dictionary<string, ProductItem> products, string filePath)
     {
         var csvContent = new StringBuilder();
         csvContent.AppendLine("Url;Name;Id;Price;OtherPrice"); //Header to know what is in each cell
