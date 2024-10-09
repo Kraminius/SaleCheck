@@ -15,10 +15,10 @@ namespace SaleCheck.Repositories.Interfaces
 
         // Product Operations
         Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(int websiteId);
-        Task<Product> GetProductByIdAsync(int websiteId, string productId);
+        Task<Product> GetProductByIdAsync(int websiteId, int productId);
         Task CreateProductAsync(int websiteId, Product product);
-        Task UpdateProductAsync(int websiteId, string productId, Product product);
-        Task DeleteProductAsync(int websiteId, string productId);
+        Task UpdateProductAsync(int websiteId, int productId, Product product);
+        Task DeleteProductAsync(int websiteId, int productId);
 
         // Subsite Operations
         Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(int websiteId);

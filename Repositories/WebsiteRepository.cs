@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SaleCheck.Repositories
 {
-    public class WebsiteRepository
+    public class WebsiteRepository : IWebsiteRepository
     {
         private readonly IMongoCollection<Website> _websites;
         private readonly ILogger<WebsiteRepository> _logger;
@@ -230,8 +230,6 @@ namespace SaleCheck.Repositories
         #endregion Product Operations
         
         #region Subsite Operations
-        
-        //TODO: Implement Subsite Operations
         
         public async Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(int websiteId)
         {

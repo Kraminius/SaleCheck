@@ -1,6 +1,20 @@
+using SaleCheck.DataAccess;
+using SaleCheck.DataAccess.Interfaces;
+using SaleCheck.Repositories;
+using SaleCheck.Repositories.Interfaces;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.Configure<MongoDbSettings>(
+    builder.Configuration.GetSection("MongoDb"));
+
+// Register MongoDbContext as Singleton
+builder.Services.AddSingleton<IMongoDbContext, MongoDbContext>();
+
+// Register WebsiteRepository as Scoped
+builder.Services.AddScoped<IWebsiteRepository, WebsiteRepository>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
