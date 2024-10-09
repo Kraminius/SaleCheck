@@ -228,16 +228,107 @@ namespace SaleCheck.Repositories
         }
         
         #endregion Product Operations
+        
+        #region Subsite Operations
+        
+        //TODO: Implement Subsite Operations
+        
+        public async Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(int websiteId)
+        {
+            try
+            {
+                _logger.LogInformation($"Fetching subsites for website ID: {websiteId}");
+                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
+                return website?.Subsites ?? new List<Subsite>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while fetching subsites for website ID: {websiteId}");
+                throw;
+            }
+        }
+        
+        public async Task<Subsite> GetSubsiteByUrlAsync(int websiteId, string url)
+        {
+            try
+            {
+                _logger.LogInformation($"Fetching subsite URL: {url} for website ID: {websiteId}");
+                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
+                return website?.Subsites.FirstOrDefault(s => s.Url == url);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while fetching subsite URL: {url} for website ID: {websiteId}");
+                throw;
+            }
+        }
+        
+         public async Task CreateSubsiteAsync(int websiteId, Subsite subsite)
+        {
+            try
+            {
+                _logger.LogInformation($"Creating a new subsite for website ID: {websiteId}");
+                var update = Builders<Website>.Update.Push(w => w.Subsites, subsite);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Website with ID: {websiteId} not found for adding subsite.");
+                    throw new KeyNotFoundException($"Website with ID: {websiteId} not found.");
+                }
+                _logger.LogInformation("Subsite created successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while creating subsite for website ID: {websiteId}");
+                throw;
+            }
+        }
 
+        public async Task UpdateSubsiteAsync(int websiteId, string url, Subsite subsite)
+        {
+            try
+            {
+                _logger.LogInformation($"Updating subsite URL: {url} for website ID: {websiteId}");
+                var filter = Builders<Website>.Filter.Eq(w => w.WebsiteId, websiteId) &
+                             Builders<Website>.Filter.ElemMatch(w => w.Subsites, s => s.Url == url);
+                var update = Builders<Website>.Update.Set(w => w.Subsites[-1], subsite);
+                var result = await _websites.UpdateOneAsync(filter, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Subsite URL: {url} not found in website ID: {websiteId}.");
+                    throw new KeyNotFoundException($"Subsite URL: {url} not found in website ID: {websiteId}.");
+                }
+                _logger.LogInformation("Subsite updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while updating subsite URL: {url} for website ID: {websiteId}");
+                throw;
+            }
+        }
 
-
-
-
-
-
-
-
-
+        public async Task DeleteSubsiteAsync(int websiteId, string url)
+        {
+            try
+            {
+                _logger.LogInformation($"Deleting subsite URL: {url} from website ID: {websiteId}");
+                var update = Builders<Website>.Update.PullFilter(w => w.Subsites, s => s.Url == url);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                if (result.ModifiedCount == 0)
+                {
+                    _logger.LogWarning($"Subsite URL: {url} not found in website ID: {websiteId}.");
+                    throw new KeyNotFoundException($"Subsite URL: {url} not found in website ID: {websiteId}.");
+                }
+                _logger.LogInformation("Subsite deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while deleting subsite URL: {url} from website ID: {websiteId}");
+                throw;
+            }
+        }
+        
+        #endregion Subsite Operations
 
 
     }
