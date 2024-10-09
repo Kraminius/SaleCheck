@@ -62,7 +62,7 @@ namespace SaleCheck.Controllers
                     // Navigate to the parent element which represents the product
                     var productNode = oldPriceNode.ParentNode;
 
-                    //Extract product info
+                    //Extract product info 
                     var productId = productNode.GetAttributeValue("id", "unknown");
                     var productNameNode = productNode.SelectSingleNode(".//h2");
                     var newPriceNode = productNode.SelectSingleNode(".//span[@class='new-price']");

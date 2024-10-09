@@ -41,12 +41,12 @@ namespace SaleCheck.Repositories
             }
         }
 
-        public async Task<Website> GetWebsiteByIdAsync(int id)
+        public async Task<Website> GetWebsiteByIdAsync(string id)
         {
             try
             {
                 _logger.LogInformation($"Getting website by id: {id}");
-                return await _websites.Find(website => website.WebsiteId == id)
+                return await _websites.Find(website => website.WebsiteId.Equals(id))
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -71,12 +71,12 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task UpdateWebsiteAsync(int id, Website website)
+        public async Task UpdateWebsiteAsync(string id, Website website)
         {
             try
             {
                 _logger.LogInformation($"Updating website with id: {id}");
-                var result = await _websites.ReplaceOneAsync(w => w.WebsiteId == id, website);
+                var result = await _websites.ReplaceOneAsync(w => w.WebsiteId.Equals(id), website);
                 if (result.MatchedCount == 0)
                 {
                     _logger.LogWarning($"Website with id: {id} not found");
@@ -91,12 +91,12 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task DeleteWebsiteAsync(int id)
+        public async Task DeleteWebsiteAsync(string id)
         {
             try
             {
                 _logger.LogInformation($"Deleting website with ID: {id}");
-                var result = await _websites.DeleteOneAsync(w => w.WebsiteId == id);
+                var result = await _websites.DeleteOneAsync(w => w.WebsiteId.Equals(id));
                 if (result.DeletedCount == 0)
                 {
                     _logger.LogWarning($"Website with ID: {id} not found for deletion.");
@@ -115,12 +115,12 @@ namespace SaleCheck.Repositories
         
         #region Product Operations
         
-        public async Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(int websiteId)
+        public async Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(string websiteId)
         {
             try
             {
                 _logger.LogInformation($"Getting products for website with ID: {websiteId}");
-                var website = await _websites.Find(w => w.WebsiteId == websiteId)
+                var website = await _websites.Find(w => w.WebsiteId.Equals(websiteId))
                     .FirstOrDefaultAsync();
                 return website.Products;
             }
@@ -131,12 +131,12 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task<Product> GetProductByIdAsync(int websiteId, int productId)
+        public async Task<Product> GetProductByIdAsync(string websiteId, string productId)
         {
             try
             {
                 _logger.LogInformation($"Getting product with ID: {productId} for website with ID: {websiteId}");
-                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
+                var website = await _websites.Find(w => w.WebsiteId.Equals(websiteId)).FirstOrDefaultAsync();
 
                 if (website == null)
                 {
@@ -144,7 +144,7 @@ namespace SaleCheck.Repositories
                     throw new KeyNotFoundException($"Website with ID: {websiteId} not found");
                 }
                 
-                var product = website.Products.FirstOrDefault(p => p.ProductId == productId);
+                var product = website.Products.FirstOrDefault(p => p.ProductId.Equals(productId));
 
                 if (product == null)
                 {
@@ -162,13 +162,13 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task CreateProductAsync(int websiteId, Product product)
+        public async Task CreateProductAsync(string websiteId, Product product)
         {
             try
             {
                 _logger.LogInformation($"Creating a new product for website ID: {websiteId}");
                 var update = Builders<Website>.Update.Push(w => w.Products, product);
-                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId.Equals(websiteId), update);
                 if (result.ModifiedCount == 0)
                 {
                     _logger.LogWarning($"Website with ID: {websiteId} not found for adding product.");
@@ -183,7 +183,7 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task UpdateProductAsync(int websiteId, int productId, Product product)
+        public async Task UpdateProductAsync(string websiteId, string productId, Product product)
         {
             try
             {
@@ -206,13 +206,13 @@ namespace SaleCheck.Repositories
             }
         }
 
-        public async Task DeleteProductAsync(int websiteId, int productId)
+        public async Task DeleteProductAsync(string websiteId, string productId)
         {
             try
             {
                 _logger.LogInformation($"Deleting product ID: {productId} from website ID: {websiteId}");
-                var update = Builders<Website>.Update.PullFilter(w => w.Products, p => p.ProductId == productId);
-                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                var update = Builders<Website>.Update.PullFilter(w => w.Products, p => p.ProductId.Equals(productId));
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId.Equals(websiteId), update);
                 if (result.ModifiedCount == 0)
                 {
                     _logger.LogWarning($"Product ID: {productId} not found in website ID: {websiteId}.");
@@ -231,12 +231,12 @@ namespace SaleCheck.Repositories
         
         #region Subsite Operations
         
-        public async Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(int websiteId)
+        public async Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(string websiteId)
         {
             try
             {
                 _logger.LogInformation($"Fetching subsites for website ID: {websiteId}");
-                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
+                var website = await _websites.Find(w => w.WebsiteId.Equals(websiteId)).FirstOrDefaultAsync();
                 return website?.Subsites ?? new List<Subsite>();
             }
             catch (Exception ex)
@@ -246,13 +246,13 @@ namespace SaleCheck.Repositories
             }
         }
         
-        public async Task<Subsite> GetSubsiteByUrlAsync(int websiteId, string url)
+        public async Task<Subsite> GetSubsiteByUrlAsync(string websiteId, string url)
         {
             try
             {
                 _logger.LogInformation($"Fetching subsite URL: {url} for website ID: {websiteId}");
-                var website = await _websites.Find(w => w.WebsiteId == websiteId).FirstOrDefaultAsync();
-                return website?.Subsites.FirstOrDefault(s => s.Url == url);
+                var website = await _websites.Find(w => w.WebsiteId.Equals(websiteId)).FirstOrDefaultAsync();
+                return website?.Subsites.FirstOrDefault(s => s.Url.Equals(url));
             }
             catch (Exception ex)
             {
@@ -261,13 +261,13 @@ namespace SaleCheck.Repositories
             }
         }
         
-         public async Task CreateSubsiteAsync(int websiteId, Subsite subsite)
+         public async Task CreateSubsiteAsync(string websiteId, Subsite subsite)
         {
             try
             {
                 _logger.LogInformation($"Creating a new subsite for website ID: {websiteId}");
                 var update = Builders<Website>.Update.Push(w => w.Subsites, subsite);
-                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId.Equals(websiteId), update);
                 if (result.ModifiedCount == 0)
                 {
                     _logger.LogWarning($"Website with ID: {websiteId} not found for adding subsite.");
@@ -282,7 +282,7 @@ namespace SaleCheck.Repositories
             }
         }
 
-        public async Task UpdateSubsiteAsync(int websiteId, string url, Subsite subsite)
+        public async Task UpdateSubsiteAsync(string websiteId, string url, Subsite subsite)
         {
             try
             {
@@ -305,13 +305,13 @@ namespace SaleCheck.Repositories
             }
         }
 
-        public async Task DeleteSubsiteAsync(int websiteId, string url)
+        public async Task DeleteSubsiteAsync(string websiteId, string url)
         {
             try
             {
                 _logger.LogInformation($"Deleting subsite URL: {url} from website ID: {websiteId}");
-                var update = Builders<Website>.Update.PullFilter(w => w.Subsites, s => s.Url == url);
-                var result = await _websites.UpdateOneAsync(w => w.WebsiteId == websiteId, update);
+                var update = Builders<Website>.Update.PullFilter(w => w.Subsites, s => s.Url.Equals(url));
+                var result = await _websites.UpdateOneAsync(w => w.WebsiteId.Equals(websiteId), update);
                 if (result.ModifiedCount == 0)
                 {
                     _logger.LogWarning($"Subsite URL: {url} not found in website ID: {websiteId}.");

@@ -8,23 +8,23 @@ namespace SaleCheck.Repositories.Interfaces
     {
         // Website Operations
         Task<IEnumerable<Website>> GetAllWebsitesAsync(int pageNumber = 1, int pageSize = 10);
-        Task<Website> GetWebsiteByIdAsync(int id);
+        Task<Website> GetWebsiteByIdAsync(string id);
         Task CreateWebsiteAsync(Website website);
-        Task UpdateWebsiteAsync(int id, Website website);
-        Task DeleteWebsiteAsync(int id);
+        Task UpdateWebsiteAsync(string id, Website website);
+        Task DeleteWebsiteAsync(string id);
 
         // Product Operations
-        Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(int websiteId);
-        Task<Product> GetProductByIdAsync(int websiteId, int productId);
-        Task CreateProductAsync(int websiteId, Product product);
-        Task UpdateProductAsync(int websiteId, int productId, Product product);
-        Task DeleteProductAsync(int websiteId, int productId);
+        Task<IEnumerable<Product>> GetProductsByWebsiteIdAsync(string websiteId);
+        Task<Product> GetProductByIdAsync(string websiteId, string productId);
+        Task CreateProductAsync(string websiteId, Product product);
+        Task UpdateProductAsync(string websiteId, string productId, Product product);
+        Task DeleteProductAsync(string websiteId, string productId);
 
         // Subsite Operations
-        Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(int websiteId);
-        Task<Subsite> GetSubsiteByUrlAsync(int websiteId, string url);
-        Task CreateSubsiteAsync(int websiteId, Subsite subsite);
-        Task UpdateSubsiteAsync(int websiteId, string url, Subsite subsite);
-        Task DeleteSubsiteAsync(int websiteId, string url);
+        Task<IEnumerable<Subsite>> GetSubsitesByWebsiteIdAsync(string websiteId);
+        Task<Subsite> GetSubsiteByUrlAsync(string websiteId, string url);
+        Task CreateSubsiteAsync(string websiteId, Subsite subsite);
+        Task UpdateSubsiteAsync(string websiteId, string url, Subsite subsite);
+        Task DeleteSubsiteAsync(string websiteId, string url);
     }
 }

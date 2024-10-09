@@ -31,7 +31,7 @@ public class WebsiteController : ControllerBase
     /// Retrieves a website by its ID.
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Website>> GetWebsiteById(int id)
+    public async Task<ActionResult<Website>> GetWebsiteById(string id)
     {
         var website = await _websiteRepository.GetWebsiteByIdAsync(id);
         if (website == null)
@@ -69,9 +69,9 @@ public class WebsiteController : ControllerBase
     /// Updates an existing website.
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateWebsite(int id, [FromBody] Website website)
+    public async Task<IActionResult> UpdateWebsite(string id, [FromBody] Website website)
     {
-        if (website == null || website.WebsiteId != id)
+        if (website == null || !website.WebsiteId.Equals(id))
             return BadRequest("Website ID mismatch.");
 
         if (!ModelState.IsValid)
@@ -96,7 +96,7 @@ public class WebsiteController : ControllerBase
     /// Deletes a website by its ID.
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteWebsite(int id)
+    public async Task<IActionResult> DeleteWebsite(string id)
     {
         try
         {
@@ -121,7 +121,7 @@ public class WebsiteController : ControllerBase
     /// Retrieves all products for a specific website.
     /// </summary>
     [HttpGet("{websiteId}/products")]
-    public async Task<IActionResult> GetProducts(int websiteId)
+    public async Task<IActionResult> GetProducts(string websiteId)
     {
         var products = await _websiteRepository.GetProductsByWebsiteIdAsync(websiteId);
         return Ok(products);
@@ -131,7 +131,7 @@ public class WebsiteController : ControllerBase
     /// Retrieves a specific product by ID within a website.
     /// </summary>
     [HttpGet("{websiteId}/products/{productId}")]
-    public async Task<IActionResult> GetProductById(int websiteId, int productId)
+    public async Task<IActionResult> GetProductById(string websiteId, string productId)
     {
         var product = await _websiteRepository.GetProductByIdAsync(websiteId, productId);
         if (product == null)
@@ -143,7 +143,7 @@ public class WebsiteController : ControllerBase
     /// Creates a new product within a website.
     /// </summary>
     [HttpPost("{websiteId}/products")]
-    public async Task<IActionResult> CreateProduct(int websiteId, [FromBody] Product product)
+    public async Task<IActionResult> CreateProduct(string websiteId, [FromBody] Product product)
     {
         if (product == null)
             return BadRequest("Product data is null.");
@@ -172,9 +172,9 @@ public class WebsiteController : ControllerBase
     /// Updates an existing product within a website.
     /// </summary>
     [HttpPut("{websiteId}/products/{productId}")]
-    public async Task<IActionResult> UpdateProduct(int websiteId, int productId, [FromBody] Product product)
+    public async Task<IActionResult> UpdateProduct(string websiteId, string productId, [FromBody] Product product)
     {
-        if (product == null || product.ProductId != productId)
+        if (product == null || !product.ProductId.Equals(productId))
             return BadRequest("Product ID mismatch.");
 
         if (!ModelState.IsValid)
@@ -200,7 +200,7 @@ public class WebsiteController : ControllerBase
     /// Deletes a product from a website.
     /// </summary>
     [HttpDelete("{websiteId}/products/{productId}")]
-    public async Task<IActionResult> DeleteProduct(int websiteId, int productId)
+    public async Task<IActionResult> DeleteProduct(string websiteId, string productId)
     {
         try
         {
@@ -226,7 +226,7 @@ public class WebsiteController : ControllerBase
     /// Retrieves all subsites for a specific website.
     /// </summary>
     [HttpGet("{websiteId}/subsites")]
-    public async Task<IActionResult> GetSubsites(int websiteId)
+    public async Task<IActionResult> GetSubsites(string websiteId)
     {
         var subsites = await _websiteRepository.GetSubsitesByWebsiteIdAsync(websiteId);
         return Ok(subsites);
@@ -236,7 +236,7 @@ public class WebsiteController : ControllerBase
     /// Retrieves a specific subsite by URL within a website.
     /// </summary>
     [HttpGet("{websiteId}/subsites/{url}")]
-    public async Task<IActionResult> GetSubsiteByUrl(int websiteId, string url)
+    public async Task<IActionResult> GetSubsiteByUrl(string websiteId, string url)
     {
         var subsite = await _websiteRepository.GetSubsiteByUrlAsync(websiteId, url);
         if (subsite == null)
@@ -248,7 +248,7 @@ public class WebsiteController : ControllerBase
     /// Creates a new subsite within a website.
     /// </summary>
     [HttpPost("{websiteId}/subsites")]
-    public async Task<IActionResult> CreateSubsite(int websiteId, [FromBody] Subsite subsite)
+    public async Task<IActionResult> CreateSubsite(string websiteId, [FromBody] Subsite subsite)
     {
         if (subsite == null)
             return BadRequest("Subsite data is null.");
@@ -276,9 +276,9 @@ public class WebsiteController : ControllerBase
     /// Updates an existing subsite within a website.
     /// </summary>
     [HttpPut("{websiteId}/subsites/{url}")]
-    public async Task<IActionResult> UpdateSubsite(int websiteId, string url, [FromBody] Subsite subsite)
+    public async Task<IActionResult> UpdateSubsite(string websiteId, string url, [FromBody] Subsite subsite)
     {
-        if (subsite == null || subsite.Url != url)
+        if (subsite == null || !subsite.Url.Equals(url))
             return BadRequest("Subsite URL mismatch.");
 
         if (!ModelState.IsValid)
@@ -304,7 +304,7 @@ public class WebsiteController : ControllerBase
     /// Deletes a subsite from a website.
     /// </summary>
     [HttpDelete("{websiteId}/subsites/{url}")]
-    public async Task<IActionResult> DeleteSubsite(int websiteId, string url)
+    public async Task<IActionResult> DeleteSubsite(string websiteId, string url)
     {
         try
         {

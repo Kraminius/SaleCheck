@@ -12,7 +12,7 @@ namespace SaleCheck.Model.DataClasses
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         [Required(ErrorMessage = "No product ID detected.")]
-        public required int ProductId { get; set; }
+        public required string ProductId { get; set; }
 
         [BsonElement("ProductName")]
         [BsonIgnoreIfNull]
