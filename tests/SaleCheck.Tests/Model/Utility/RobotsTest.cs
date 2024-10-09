@@ -38,15 +38,15 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             List<Page> pages = await robots.GetAllSitemapPages();
             _output.WriteLine("Loaded All Pages: " + pages.Count);
             Assert.NotEmpty(pages);
-            Dictionary<string, Product> products = new Dictionary<string, Product>();
+            Dictionary<string, ProductItem> products = new Dictionary<string, ProductItem>();
             int index = 0;
             foreach (Page page in pages)
             {
-                List<Product> pageProducts = await page.GetProducts();
+                List<ProductItem> pageProducts = await page.GetProducts();
                 
                 
                 
-                foreach (Product product in pageProducts)
+                foreach (ProductItem product in pageProducts)
                 {
                     products.TryAdd(product.Id, product);
                 }
@@ -71,7 +71,7 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             string title =  SampleSites.VinduesGrossisten.Title;
             string website = SampleSites.VinduesGrossisten.Link;
             Robots robots = new Robots(title, website);
-            Dictionary<string, Product> products = await robots.GetAllProducts();
+            Dictionary<string, ProductItem> products = await robots.GetAllProducts();
             Assert.NotEmpty(products);
         }
     }

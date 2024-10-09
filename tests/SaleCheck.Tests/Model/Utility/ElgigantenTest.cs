@@ -64,8 +64,8 @@ public class ElgigantenTest : IWebsiteTest
         string title = SampleSites.Elgiganten.Title;
         string url = SampleSites.Elgiganten.CateogrySite;
         Page page = new Page(title, url);
-        List<Product> products = await page.GetProducts();
-        foreach (Product product in products)
+        List<ProductItem> products = await page.GetProducts();
+        foreach (ProductItem product in products)
         {
             _output.WriteLine(product.ToString());
         }
@@ -78,7 +78,7 @@ public class ElgigantenTest : IWebsiteTest
         string title = SampleSites.Elgiganten.Title;
         string url = SampleSites.Elgiganten.Link;
         Robots robots = new Robots(title, url);
-        Dictionary<string, Product> products = await robots.GetAllProducts();
+        Dictionary<string, ProductItem> products = await robots.GetAllProducts();
         Assert.NotEmpty(products);
         _output.WriteLine("products: " + products.Count);
     }

@@ -6,7 +6,7 @@ public class Robots(string title, string url)
 {
     private Page? _page;
     private List<SiteMap> _siteMaps = new List<SiteMap>();
-    private Dictionary<string, Product> _products = new Dictionary<string, Product>();
+    private Dictionary<string, ProductItem> _products = new Dictionary<string, ProductItem>();
     public async Task<List<SiteMap>> GetSiteMaps()
     {
         if (_siteMaps.Count == 0) await LoadSiteMaps();
@@ -48,7 +48,7 @@ public class Robots(string title, string url)
         return allPages;
     }
 
-    public async Task<Dictionary<string, Product>> GetAllProducts()
+    public async Task<Dictionary<string, ProductItem>> GetAllProducts()
     {
         if(_products.Count == 0) await LoadProducts();
         return _products;
@@ -59,8 +59,8 @@ public class Robots(string title, string url)
         List<Page> pages = await GetAllSitemapPages();
         foreach (Page page in pages)
         {
-            List<Product> products = await page.GetProducts();
-            foreach (Product product in products)
+            List<ProductItem> products = await page.GetProducts();
+            foreach (ProductItem product in products)
             {
                 _products.TryAdd(product.Id, product);
             }
