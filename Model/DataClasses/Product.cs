@@ -20,8 +20,6 @@ namespace SaleCheck.Model.DataClasses
         [Required]
         public List<Price> Price { get; set; } = new List<Price>();
 
-        public string OldPrice { get; set; }
-        public string NewPrice { get; set; }
     }
 
 }
