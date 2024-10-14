@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.InteropServices.JavaScript;
 using SaleCheck.Repositories.Interfaces;
 using SaleCheck.Model.DataClasses;
 
@@ -11,14 +12,24 @@ public class DataFactory(IWebsiteRepository websiteRepository)
     {
         Website website = await websiteRepository.GetWebsiteByIdAsync(websiteId);
         Dictionary<string, ProductItem> productItems = new Dictionary<string, ProductItem>();
+        
+        //If subsites == empty
+        if (!(website.Subsites?.Any() == true))
+        {
+            Console.WriteLine("No Subsites found for + " + website.WebsiteName + ", running full check");
+            await UpdateWebsiteByCheckingAll(websiteId);
+            return;
+        }
+
         foreach (Subsite subsite in website.Subsites)
         {
             if(subsite.Ignore && shouldIgnoreSites) continue;
             Page page = new Page(website.WebsiteName, subsite.Url);
-            subsite.Html.Add(DateTime.Now, await page.GetHtmlContent() ?? "null");
+            subsite.Html.Add(DateTime.Now.ToString("dd-MM-yyyy") + "debug", page.GetUrl());
             foreach (ProductItem productItem in await page.GetProducts())
             {
                 productItems.TryAdd(productItem.Name, productItem);
+                Console.WriteLine(productItem.Name + " - " + productItem.Price);
             }
         }
         foreach(var productKeyValue in productItems)
@@ -41,7 +52,7 @@ public class DataFactory(IWebsiteRepository websiteRepository)
             {
                 if (existingSubsite.Url == page.GetUrl())
                 {
-                    existingSubsite.Html.Add(DateTime.Now, await page.GetHtmlContent()?? "null");
+                    existingSubsite.Html.Add(DateTime.Now.ToString("dd-MM-yyyy"), page.GetUrl());
                     found = true;
                     break;
                 }
@@ -59,22 +70,35 @@ public class DataFactory(IWebsiteRepository websiteRepository)
         }
         await websiteRepository.UpdateWebsiteAsync(websiteId, website);
     }
-    public async Task CreateWebsite(string websiteName, string websiteUrl, string websiteId)
+    public async Task CreateWebsite(WebsiteInit websiteInit)
     {
+        string name = websiteInit.websiteName;
+        string url = websiteInit.websiteUrl;
+        string id = websiteInit.websiteId;
+        
+        
+        
+        
         Website website = new Website
         {
-            WebsiteName = websiteName,
-            WebsiteUrl = websiteUrl,
-            WebsiteId = websiteId
+            WebsiteName = name,
+            WebsiteUrl = url,
+            WebsiteId = id
         };
-        Robots robots = new Robots(websiteName, websiteUrl);
+        Console.WriteLine(website.WebsiteName + " object created. URL: " + website.WebsiteUrl + "Website Name: " +  website.WebsiteName + "Website Id: " + website.WebsiteId);
+        Robots robots = new Robots(name, url);
         List<Page> pages = await  robots.GetAllSitemapPages();
         List<Subsite> subsites = new List<Subsite>();
-        foreach (Page page in pages)
+        await Parallel.ForEachAsync(pages, new ParallelOptions { MaxDegreeOfParallelism = 24 }, async (page, cancellationToken) =>
         {
             Subsite subsite = await DataConvertions.SubsiteFromPage(page);
-            subsites.Add(subsite);
-        }
+            lock (subsites) 
+            {
+                subsites.Add(subsite);
+            }
+            Console.WriteLine("Subsite: " + subsite.Url + " Added");
+        });
+        
         website.Subsites = subsites;
         Dictionary<string, ProductItem> productItems = await robots.GetAllProducts();
         List<Product> products = new List<Product>();
