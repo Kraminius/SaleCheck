@@ -8,7 +8,6 @@ namespace SaleCheck.Model.DataClasses
     public class Website
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
         public string? WebsiteId { get; set; }
 
         [BsonElement("WebsiteUrl")]

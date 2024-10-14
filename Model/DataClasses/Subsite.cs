@@ -17,7 +17,7 @@ namespace SaleCheck.Model.DataClasses
         public bool Ignore { get; set; }
 
         [BsonElement("Html")]
-        public Dictionary<DateTime, string> Html { get; set; } = new Dictionary<DateTime, string>();
+        public Dictionary<string, string> Html { get; set; } = new Dictionary<string, string>();
 
 
     }
