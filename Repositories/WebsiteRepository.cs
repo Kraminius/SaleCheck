@@ -60,13 +60,16 @@ namespace SaleCheck.Repositories
         {
             try
             {
+                Console.WriteLine("Creating website");
                 _logger.LogInformation($"Creating website.");
                 await _websites.InsertOneAsync(website);
+                Console.WriteLine("Website created successfully");
                 _logger.LogInformation("Website created successfully");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while creating website");
+                Console.WriteLine("Error occured while creating website: " + ex.Message);
                 throw;
             }
         }
