@@ -1,58 +1,88 @@
-﻿using System.Collections.ObjectModel;
-using SaleCheck.Model.DataClasses;
+﻿
 using SaleCheck.Repositories.Interfaces;
+using SaleCheck.Model.DataClasses;
 
 namespace SaleCheck.Model.Utility;
 
+
 public class DataFactory(IWebsiteRepository websiteRepository)
 {
-    private readonly IWebsiteRepository _websiteRepository = websiteRepository;
-
-    public async Task CreateWebsite(string websiteName, string websiteUrl, string websiteID)
+    public async Task UpdateWebsiteByCheckingExistingSubsites(string websiteId, bool shouldIgnoreSites)
     {
-        Website website = new Website();
-        website.WebsiteName = websiteName;
-        website.WebsiteUrl = websiteUrl;
-        website.WebsiteId = websiteID;
+        Website website = await websiteRepository.GetWebsiteByIdAsync(websiteId);
+        Dictionary<string, ProductItem> productItems = new Dictionary<string, ProductItem>();
+        foreach (Subsite subsite in website.Subsites)
+        {
+            if(subsite.Ignore && shouldIgnoreSites) continue;
+            Page page = new Page(website.WebsiteName, subsite.Url);
+            subsite.Html.Add(DateTime.Now, await page.GetHtmlContent() ?? "null");
+            foreach (ProductItem productItem in await page.GetProducts())
+            {
+                productItems.TryAdd(productItem.Name, productItem);
+            }
+        }
+        foreach(var productKeyValue in productItems)
+        {
+            ProductItem productItem = productKeyValue.Value;
+            if(DataConvertions.UpdateExistingProduct(website, productItem)) continue;
+            website.Products.Add(DataConvertions.ProductFromProductItem(productKeyValue.Value));
+        }
+        await websiteRepository.UpdateWebsiteAsync(websiteId, website);
+    }
+    public async Task UpdateWebsiteByCheckingAll(string websiteId)
+    {
+        Website website = await websiteRepository.GetWebsiteByIdAsync(websiteId);
+        Robots robots = new Robots(website.WebsiteName, website.WebsiteUrl);
+        List<Page> pages = await  robots.GetAllSitemapPages();
+        foreach (Page page in pages)
+        {
+            bool found = false;
+            foreach (Subsite existingSubsite in website.Subsites)
+            {
+                if (existingSubsite.Url == page.GetUrl())
+                {
+                    existingSubsite.Html.Add(DateTime.Now, await page.GetHtmlContent()?? "null");
+                    found = true;
+                    break;
+                }
+            }
+            if(found) continue;
+            Subsite subsite = await DataConvertions.SubsiteFromPage(page);
+            website.Subsites.Add(subsite);
+        }
+        Dictionary<string, ProductItem> productItems = await robots.GetAllProducts();
+        foreach(var productKeyValue in productItems)
+        {
+            ProductItem productItem = productKeyValue.Value;
+            if(DataConvertions.UpdateExistingProduct(website, productItem)) continue;
+            website.Products.Add(DataConvertions.ProductFromProductItem(productKeyValue.Value));
+        }
+        await websiteRepository.UpdateWebsiteAsync(websiteId, website);
+    }
+    public async Task CreateWebsite(string websiteName, string websiteUrl, string websiteId)
+    {
+        Website website = new Website
+        {
+            WebsiteName = websiteName,
+            WebsiteUrl = websiteUrl,
+            WebsiteId = websiteId
+        };
         Robots robots = new Robots(websiteName, websiteUrl);
         List<Page> pages = await  robots.GetAllSitemapPages();
         List<Subsite> subsites = new List<Subsite>();
         foreach (Page page in pages)
         {
-            Subsite subsite = new Subsite();
-            subsite.Url = page.GetUrl();
-            Dictionary<DateTime, string> instanceOfPages = new Dictionary<DateTime, string>();
-            instanceOfPages.Add(DateTime.Now, page.GetUrl());
-            subsite.Html = instanceOfPages;
-            subsite.Ignore = false;
+            Subsite subsite = await DataConvertions.SubsiteFromPage(page);
+            subsites.Add(subsite);
         }
         website.Subsites = subsites;
         Dictionary<string, ProductItem> productItems = await robots.GetAllProducts();
         List<Product> products = new List<Product>();
         foreach(var productKeyValue in productItems)
         {
-            Product product = new Product();
-            ProductItem productItem = productKeyValue.Value;
-            product.ProductName = productItem.Name;
-            product.ProductId = productItem.Id;
-            List<Price> prices = new List<Price>();
-            Price price = new Price();
-            price.Date = DateTime.Now;
-            if (productItem.OtherPrice != null)
-            {
-                price.DiscountPrice = Decimal.ToDouble(productItem.Price);
-                decimal normalPrice = productItem.OtherPrice ?? 0;
-                price.NormalPrice = Decimal.ToDouble(normalPrice);
-            }
-            else
-            {
-                price.NormalPrice = Decimal.ToDouble(productItem.Price);
-            }
-            prices.Add(price);
-            product.Price = prices;
+            products.Add(DataConvertions.ProductFromProductItem(productKeyValue.Value));
         }
         website.Products = products;
-        await _websiteRepository.CreateWebsiteAsync(website);
-
+        await websiteRepository.CreateWebsiteAsync(website);
     }
 }

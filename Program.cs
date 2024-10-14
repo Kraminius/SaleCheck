@@ -3,12 +3,12 @@ using SaleCheck.DataAccess.Interfaces;
 using SaleCheck.Repositories;
 using SaleCheck.Repositories.Interfaces;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDb"));
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
 
 // Register MongoDbContext as Singleton
 builder.Services.AddSingleton<IMongoDbContext, MongoDbContext>();
