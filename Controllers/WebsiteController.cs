@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SaleCheck.Model.DataClasses;
+using SaleCheck.Model.Utility;
 using SaleCheck.Repositories.Interfaces;
 
 namespace SaleCheck.Controllers;
@@ -9,10 +10,14 @@ namespace SaleCheck.Controllers;
 public class WebsiteController : ControllerBase
 {
     private readonly IWebsiteRepository _websiteRepository;
+    private readonly DataFactory _dataFactory;
+    private readonly WebsiteSummaryService _websiteSummaryService;
 
-    public WebsiteController(IWebsiteRepository websiteRepository)
+    public WebsiteController(IWebsiteRepository websiteRepository, DataFactory dataFactory, WebsiteSummaryService websiteSummaryService)
     {
         _websiteRepository = websiteRepository;
+        _dataFactory = dataFactory;
+        _websiteSummaryService = websiteSummaryService;
     }
 
     #region Website endpoints
@@ -46,18 +51,18 @@ public class WebsiteController : ControllerBase
     /// Creates a new website.
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreateWebsite([FromBody] Website website)
+    public async Task<IActionResult> CreateWebsite([FromBody] WebsiteInit website)
     {
-        if (website == null)
-            return BadRequest("Website data is null.");
-
         if (!ModelState.IsValid)
+        {
             return BadRequest(ModelState);
+        }
+           
 
         try
         {
-            await _websiteRepository.CreateWebsiteAsync(website);
-            return CreatedAtAction(nameof(GetWebsiteById), new { id = website.WebsiteId }, website);
+            await _dataFactory.CreateWebsite(website);
+            return Ok("Website created successfully.");
         }
         catch (Exception ex)
         {
@@ -195,6 +200,22 @@ public class WebsiteController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+  
+    [HttpGet("summaries")]
+    public async Task<ActionResult<IEnumerable<WebsiteSummary>>> GetWebsiteSummaries(int pageNumber = 1, int pageSize = 10)
+    {
+        try
+        {
+            var websites = await _websiteRepository.GetAllWebsitesAsync(pageNumber, pageSize);
+            var summaries = websites.Select(_websiteSummaryService.CreateWebsiteSummary).ToList();
+            return Ok(summaries);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
     /// <summary>
     /// Deletes a product from a website.
