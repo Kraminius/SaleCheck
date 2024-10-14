@@ -20,8 +20,8 @@ public class DataConvertions
     }
     public static async Task<Subsite> SubsiteFromPage(Page page)
     {
-        Dictionary<DateTime, string> instanceOfPages = new Dictionary<DateTime, string>();
-        instanceOfPages.Add(DateTime.Now, await page.GetHtmlContent() ?? "null");
+        Dictionary<string, string> instanceOfPages = new Dictionary<string, string>();
+        instanceOfPages.Add(DateTime.Now.ToString("dd-MM-yyyy"), page.GetUrl());
         return new Subsite
         {
             Url = page.GetUrl(),
