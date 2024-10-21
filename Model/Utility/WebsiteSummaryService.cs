@@ -26,9 +26,13 @@ public class WebsiteSummaryService
         var productsViolation = canCheckViolations
             ? website.Products.Count(p => _productAnalysisService.IsProductInViolation(p.Price))
             : 0;
+        Console.WriteLine($"Number of products in violation: {productsViolation}");
 
-        var longestStreak = website.Products.Max(p => p.Price.Max(price => (DateTime.UtcNow - price.Date).TotalDays));
 
+        // Calculate the longest sale streak across all products
+        var longestStreak = website.Products.Max(p => _productAnalysisService.CalculateLongestSaleStreak(p.Price));
+
+        // Return the WebsiteSummary object
         return new WebsiteSummary
         {
             WebsiteId = website.WebsiteId,
@@ -37,7 +41,8 @@ public class WebsiteSummaryService
             ProductsCount = website.Products.Count,
             ProductsOnSale = productsOnSale,
             ProductsViolation = productsViolation,
-            ProductsLongestCurrentStreak = (int)longestStreak
+            ProductsLongestCurrentStreak = longestStreak
         };
     }
+
 }
