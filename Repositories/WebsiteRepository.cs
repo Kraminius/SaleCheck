@@ -61,18 +61,35 @@ namespace SaleCheck.Repositories
             try
             {
                 Console.WriteLine("Creating website");
-                _logger.LogInformation($"Creating website.");
+                _logger.LogInformation($"Checking if website with ID: {website.WebsiteId} already exists.");
+
+                // Check if a website with the same ID exists
+                var existingWebsite = await _websites.Find(w => w.WebsiteId == website.WebsiteId).FirstOrDefaultAsync();
+                if (existingWebsite != null)
+                {
+                    _logger.LogWarning($"Website with ID: {website.WebsiteId} already exists.");
+                    throw new InvalidOperationException($"Website with ID: {website.WebsiteId} already exists.");
+                }
+
+                // Insert the website if it doesn't exist
                 await _websites.InsertOneAsync(website);
                 Console.WriteLine("Website created successfully");
                 _logger.LogInformation("Website created successfully");
             }
+            catch (MongoWriteException ex)
+            {
+                _logger.LogError(ex, $"Error occurred while creating website with ID: {website.WebsiteId}");
+                Console.WriteLine($"Error occurred while creating website: {ex.Message}");
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while creating website");
-                Console.WriteLine("Error occured while creating website: " + ex.Message);
+                _logger.LogError(ex, $"Unexpected error occurred while creating website with ID: {website.WebsiteId}");
+                Console.WriteLine($"Unexpected error: {ex.Message}");
                 throw;
             }
         }
+
         
         public async Task UpdateWebsiteAsync(string id, Website website)
         {
