@@ -69,6 +69,8 @@ public class WebsiteController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+    
+    
 
     // <summary>
     /// Updates an existing website.
@@ -145,35 +147,6 @@ public class WebsiteController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new product within a website.
-    /// </summary>
-    [HttpPost("{websiteId}/products")]
-    public async Task<IActionResult> CreateProduct(string websiteId, [FromBody] Product product)
-    {
-        if (product == null)
-            return BadRequest("Product data is null.");
-
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        try
-        {
-            await _websiteRepository.CreateProductAsync(websiteId, product);
-            return CreatedAtAction(nameof(GetProductById), new { websiteId = websiteId, productId = product.ProductId },
-                product);
-        }
-        catch (KeyNotFoundException knfEx)
-        {
-            return NotFound(knfEx.Message);
-        }
-        catch (Exception ex)
-        {
-            // Log exception if not already handled in repository
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
-    }
-
-    /// <summary>
     /// Updates an existing product within a website.
     /// </summary>
     [HttpPut("{websiteId}/products/{productId}")]
@@ -235,6 +208,34 @@ public class WebsiteController : ControllerBase
         catch (Exception ex)
         {
             // Log exception if not already handled in repository
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+    
+    [HttpPost("{websiteId}/products")]
+    public async Task<IActionResult> AddProduct(string websiteId, [FromBody] Product product)
+    {
+        if (string.IsNullOrEmpty(websiteId))
+        {
+            return BadRequest("WebsiteId cannot be null or empty.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            await _websiteRepository.CreateProductAsync(websiteId, product);
+            return Ok($"Product with ID: {product.ProductId} added successfully to Website ID: {websiteId}.");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
