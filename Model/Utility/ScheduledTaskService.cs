@@ -32,21 +32,29 @@ public class ScheduledTaskService : BackgroundService
         }
     }
 
-    private async Task RunScheduledTask(CancellationToken cancellationToken)
+    public async Task RunScheduledTask(CancellationToken cancellationToken)
     {
         using (var scope = _serviceProvider.CreateScope())
         {
+            // Check if DataFactory is resolved
             var dataFactory = scope.ServiceProvider.GetRequiredService<DataFactory>();
+            if (dataFactory == null)
+            {
+                Console.WriteLine("Error: DataFactory could not be resolved.");
+                return;
+            }
+
             try
             {
                 Console.WriteLine("Running scheduled task: Scrape vinduesgrossisten");
                 await dataFactory.UpdateWebsiteByCheckingExistingSubsites("vinduesgrossisten", true);
             }
-            catch (ArgumentException e)
+            catch (Exception e)
             {
-                Console.WriteLine("Already updated today, skipping...");
-                Console.WriteLine(e);
+                Console.WriteLine($"Error occurred in RunScheduledTask: {e.Message}");
+                throw;
             }
         }
     }
+
 }
