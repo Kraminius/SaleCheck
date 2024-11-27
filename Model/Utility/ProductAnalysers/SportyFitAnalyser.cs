@@ -1,3 +1,4 @@
+﻿
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Amazon.SecurityToken.Model;
@@ -7,7 +8,7 @@ using Tag = SaleCheck.HtmlLib.Tag;
 
 namespace SaleCheck.Model.Utility.ProductAnalysers 
 {
-    public class VinduesGrossistenAnalyser : IProductAnalyser
+    public class SportyFitAnalyser : IProductAnalyser
     {
         public async Task<List<Page>> GetRobotsSitemapLink(Page page)
         {

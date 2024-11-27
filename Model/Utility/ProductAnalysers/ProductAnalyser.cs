@@ -12,6 +12,8 @@ public static class ProductAnalyser
                 return new VinduesGrossistenAnalyser();
             case "elgiganten":
                 return new ElgigantenAnalyser();
+            case "sportyfit":
+                return new SportyFitAnalyser();
             default:
                 return null;
         }
