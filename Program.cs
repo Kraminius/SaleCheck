@@ -14,6 +14,7 @@ builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("Mo
 
 // Register MongoDbContext as Singleton
 builder.Services.AddSingleton<IMongoDbContext, MongoDbContext>();
+builder.Services.AddSingleton<ScheduledTaskService>();
 
 // Register WebsiteRepository as Scoped
 builder.Services.AddScoped<IWebsiteRepository, WebsiteRepository>();
@@ -21,6 +22,17 @@ builder.Services.AddScoped<DataFactory>();
 builder.Services.AddScoped<ProductAnalysisService>();
 builder.Services.AddScoped<WebsiteSummaryService>();
 builder.Services.AddHostedService<ScheduledTaskService>();
+// Add ScheduledTaskService as both a singleton and hosted service
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 
 builder.Services.AddControllers();
@@ -29,6 +41,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseCors("AllowAll");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
