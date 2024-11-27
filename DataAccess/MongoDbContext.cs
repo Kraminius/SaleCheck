@@ -9,6 +9,8 @@ namespace SaleCheck.DataAccess
     {
 
         private readonly IMongoDatabase _database;
+        public IMongoCollection<ScraperWebsiteRules> ScraperWebsiteRules => _database.GetCollection<ScraperWebsiteRules>("ScraperWebsiteRules");
+
 
         public MongoDbContext(IOptions<MongoDbSettings> settings)
         {

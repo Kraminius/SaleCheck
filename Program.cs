@@ -16,11 +16,23 @@ builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("Mo
 builder.Services.AddSingleton<IMongoDbContext, MongoDbContext>();
 
 // Register WebsiteRepository as Scoped
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 builder.Services.AddScoped<IWebsiteRepository, WebsiteRepository>();
 builder.Services.AddScoped<DataFactory>();
 builder.Services.AddScoped<ProductAnalysisService>();
 builder.Services.AddScoped<WebsiteSummaryService>();
 builder.Services.AddHostedService<ScheduledTaskService>();
+builder.Services.AddScoped<ScraperWebsiteRulesRepository>();
 
 
 builder.Services.AddControllers();
@@ -40,6 +52,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseCors("AllowFrontend");
 
 app.MapControllers();
 

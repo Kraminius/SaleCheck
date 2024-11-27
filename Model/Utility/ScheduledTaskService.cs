@@ -32,7 +32,7 @@ public class ScheduledTaskService : BackgroundService
         }
     }
 
-    private async Task RunScheduledTask(CancellationToken cancellationToken)
+    public async Task RunScheduledTask(CancellationToken cancellationToken)
     {
         using (var scope = _serviceProvider.CreateScope())
         {
