@@ -62,7 +62,7 @@ public class ElgigantenTest : IWebsiteTest
     public async Task CanFindProducts()
     {
         string title = SampleSites.Elgiganten.Title;
-        string url = SampleSites.Elgiganten.CateogrySite;
+        string url = SampleSites.Elgiganten.CategorySite;
         Page page = new Page(title, url);
         List<ProductItem> products = await page.GetProducts();
         foreach (ProductItem product in products)

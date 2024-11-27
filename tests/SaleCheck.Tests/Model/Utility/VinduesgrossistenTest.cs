@@ -57,7 +57,7 @@ public class VinduesgrossistenTest : IWebsiteTest
     public async Task CanFindProducts()
     {
         string title = SampleSites.VinduesGrossisten.Title;
-        string url = SampleSites.VinduesGrossisten.CateogrySite;
+        string url = SampleSites.VinduesGrossisten.CategorySite;
         Page page = new Page(title, url);
         List<ProductItem> products = await page.GetProducts();
         foreach (ProductItem product in products)
