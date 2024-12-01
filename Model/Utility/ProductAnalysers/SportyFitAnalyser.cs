@@ -21,24 +21,8 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
             foreach (Match match in matches)
             {
                 string link = match.Groups[1].Value;
-            
-                /*
-                 Some robots.txt write their sitemap as /sitemap.xsl,
-                 while others use the whole link as https://website.dk/sitemap.xml
-                 we therefore add the base url to the front of /sitemap to make sure we get links that can be used.
-                 */
-                if (!link.StartsWith("http")) 
-                {
-                    link = page.GetUrl().TrimEnd('/') + link;
-                }
-
-                // Skip link if it is not danish, other countries is not within our scope. (Only does something for pages who sell globally)
-                if (!link.Contains(".dk") && !link.Contains("da_dk"))
-                {
-                    continue; 
-                }
-
-                sitemapPages.Add(new Page(SampleSites.VinduesGrossisten.Title, link));
+                sitemapPages.Add(new Page("sportyfit", link));
+                Console.WriteLine("HTTP MATCH: " + link);
             }
 
             return sitemapPages;
@@ -46,17 +30,41 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
         
         public async Task<List<Page>> GetSitemapLinks(Page page)
         {
-            string html = await page.GetHtmlContent();
-            if (html == null) return new List<Page>();
+            Console.WriteLine("Sitemap URL (top) added: " + page.GetUrl());
+            string? content = await page.GetHtmlContent();
+            if (content == null) return new List<Page>();
+            int start = content.IndexOf("xsl\"?");
+            int end = content.IndexOf("<!--");
+            string contentSub = content.Substring(start + 5, end-start + 4);
             string pattern = @">https://[^\s<]+<";
-            MatchCollection matches = Regex.Matches(html, pattern);
-            List<Page> pages = new List<Page>();
+            MatchCollection matches = Regex.Matches(content, pattern);
+            
+            Console.WriteLine(contentSub);
+            Html html = new Html(contentSub);
+            
 
-            foreach (Match match in matches)
+            List<Page> pages = new List<Page>();
+            
+            foreach (Match parent in matches)
             {
-                // Remove the wrapping '>' and '<'
-                string link = match.Value.Trim('>', '<');
-                pages.Add(new Page(SampleSites.VinduesGrossisten.Title,link));
+                string? link = parent
+                Console.WriteLine("Link: " + link);
+                if(link == null) continue;
+                
+                Page sitemapPage = new Page("sportyfit", link);
+                Console.WriteLine("SitemapPage contains: " + sitemapPage.GetUrl());
+                if (link.Contains(".xml"))
+                {
+                    List<Page> deeperSitemaps = await GetSitemapLinks(sitemapPage);
+                    pages.AddRange(deeperSitemaps);
+                }
+                else
+                {
+                    pages.Add(sitemapPage);
+                    Console.WriteLine("Added sitemap: " + sitemapPage.GetUrl());
+                }
+
+                
             }
 
             return pages;
@@ -74,21 +82,26 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
             string? content = await page.GetHtmlContent();
             if (content == null) return new List<ProductItem>();
             Html html = new Html(content);
-            List<Tag> parents = html.SearchForTags(new Filter().Tag("figcaption").Property("class", "product-item-details"));
+            List<Tag> parents = html.SearchForTags(new Filter().Tag("div").Property("data-elementor-type", "loop-item"));
             List<ProductItem> productItems = new List<ProductItem>();
             foreach (Tag parent in parents)
             {
-                string? id = html.SearchForTag(new Filter().Tag("div").Property("class", "price-box"), parent)?.GetProperty("data-product-id");
-                string? url = html.SearchForTag(new Filter().Tag("a").Property("class", "product-info-link"), parent)?.GetProperty("href");
-                string? name = html.SearchForTag(new Filter().Tag("h3").Property("class", "name"), parent)?.Content?.Trim();
-                if (name != null)
-                    name += " " + html
-                        .SearchForTag(new Filter().Tag("p").Property("class", "additional-description"), parent)
-                        ?.Content?.Trim();//Name was split into two containers
-                decimal price = ParsePrice(html.SearchForTag(new Filter().Tag("div").Property("class", "price"), parent)?.Content?.Trim());
-                decimal discount = ParsePrice(html.SearchForTag(new Filter().Tag("div").Property("class", "price_oprice_with_discountld"), parent)?.Content?.Trim());
+                string? id = html.SearchForTag(new Filter().Tag("div").Property("class", "yith-wcwl-add-to-wishlist"), parent)?.GetProperty("product_id");
+                string? url = html.SearchForTag(new Filter().Tag("a").Property("class", "elementor-element").Property("data-element_type", "container"), parent)?.GetProperty("href");
+                string? name = html.SearchForTag(new Filter().Tag("p").Property("class", "elementor-heading-title"), parent)?.ChildTags[0].Content?.Trim();
+                //<p class="price product-page-price price-on-sale price-not-in-stock">
+                 
+                
+                decimal price = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "screen-reader-text").Content("Original price"), parent)?.Content?.Trim());
+                decimal discount = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "screen-reader-text").Content("Current price"), parent)?.Content?.Trim());
+                decimal noDiscount = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "woocommerce-Price-amount"), parent)?.ChildTags[0]?.Content?.Trim());
+                
                 if (id == null || url == null || name == null) continue;
-                if(discount == -1) productItems.Add(new ProductItem(url, name, id, price));
+                if (price == -1 || discount == -1)
+                {
+                    productItems.Add(new ProductItem(url, name, id, noDiscount));
+                }
+                else if(discount == -1) productItems.Add(new ProductItem(url, name, id, price));
                 else productItems.Add(new ProductItem(url, name, id, price, discount));
             }
             return productItems;
