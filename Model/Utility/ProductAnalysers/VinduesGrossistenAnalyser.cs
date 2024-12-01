@@ -29,7 +29,7 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 if (!link.StartsWith("http")) 
                 {
                     link = page.GetUrl().TrimEnd('/') + link;
-                }
+                } 
 
                 // Skip link if it is not danish, other countries is not within our scope. (Only does something for pages who sell globally)
                 if (!link.Contains(".dk") && !link.Contains("da_dk"))
@@ -62,12 +62,17 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
         }
         private static decimal ParsePrice(string? priceText)
         {
-            if(priceText == null) return -1;
-            string result = Regex.Replace(priceText, @"[^0-9,\.]", ""); //Remove unnecessary characters
-            while(result[0] == ',' || result[0] == '.') result = result.Remove(0, 1);
-            while(result[^1] == ',' || result[^1] == '.') result = result.Remove(result.Length-1, 1);
+            if (string.IsNullOrEmpty(priceText)) return -1;
+
+            // Remove unnecessary characters, keeping only numbers, ',' and '.'
+            string result = Regex.Replace(priceText, @"[^\d,\.]", "");
+
+            // Normalize the string: assume ',' is the decimal separator and '.' is the thousand separator
+            result = result.Replace(".", "").Replace(",", ".");
+            
             return decimal.Parse(result);
         }
+
         public async Task<List<ProductItem>> Analyze(Page page)
         {
             string? content = await page.GetHtmlContent();
