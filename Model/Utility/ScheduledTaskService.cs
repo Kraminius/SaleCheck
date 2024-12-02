@@ -1,5 +1,6 @@
 ﻿using Cronos;
 using SaleCheck.Model.Utility;
+using SaleCheck.Repositories.Interfaces;
 
 public class ScheduledTaskService : BackgroundService
 {
@@ -33,28 +34,65 @@ public class ScheduledTaskService : BackgroundService
     }
 
     public async Task RunScheduledTask(CancellationToken cancellationToken)
+{
+    using (var scope = _serviceProvider.CreateScope())
     {
-        using (var scope = _serviceProvider.CreateScope())
+        // Resolve DataFactory
+        var dataFactory = scope.ServiceProvider.GetRequiredService<DataFactory>();
+        if (dataFactory == null)
         {
-            // Check if DataFactory is resolved
-            var dataFactory = scope.ServiceProvider.GetRequiredService<DataFactory>();
-            if (dataFactory == null)
+            Console.WriteLine("Error: DataFactory could not be resolved.");
+            return;
+        }
+
+        // Resolve IWebsiteRepository
+        var websiteRepository = scope.ServiceProvider.GetRequiredService<IWebsiteRepository>();
+        if (websiteRepository == null)
+        {
+            Console.WriteLine("Error: IWebsiteRepository could not be resolved.");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine("Running scheduled task: Scrape all websites");
+
+            // Fetch all websites
+            var websites = await websiteRepository.GetAllWebsitesAsync();
+            if (websites == null)
             {
-                Console.WriteLine("Error: DataFactory could not be resolved.");
+                Console.WriteLine("Error: Websites could not be retrieved.");
                 return;
             }
+            Console.WriteLine("Running scheduled task: Scrape websites on: " + websites.Count() + " websites");
 
-            try
+            var today = DateTime.UtcNow.Date;
+
+            // Iterate over each website
+            foreach (var website in websites)
             {
-                Console.WriteLine("Running scheduled task: Scrape vinduesgrossisten");
-                await dataFactory.UpdateWebsiteByCheckingExistingSubsites("vinduesgrossisten", true);
+                if (website.LastScrapedDate.HasValue && website.LastScrapedDate.Value.Date == today)
+                {
+                    Console.WriteLine($"Skipping website {website.WebsiteId} as it has already been scraped today.");
+                    continue;
+                }
+
+                Console.WriteLine($"Updating website: {website.WebsiteId}");
+                await dataFactory.UpdateWebsiteByCheckingExistingSubsites(website.WebsiteId, true);
+
+                // Update LastScrapedDate after successful scraping
+                website.LastScrapedDate = today;
+                await websiteRepository.UpdateWebsiteAsync(website.WebsiteId, website);
             }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error occurred in RunScheduledTask: {e.Message}");
-                throw;
-            }
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error occurred in RunScheduledTask: {e.Message}");
         }
     }
+}
+
+
 
 }

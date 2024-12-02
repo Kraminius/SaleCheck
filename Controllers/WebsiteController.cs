@@ -12,12 +12,14 @@ public class WebsiteController : ControllerBase
     private readonly IWebsiteRepository _websiteRepository;
     private readonly DataFactory _dataFactory;
     private readonly WebsiteSummaryService _websiteSummaryService;
+    private readonly ILogger<WebsiteController> _logger;
 
-    public WebsiteController(IWebsiteRepository websiteRepository, DataFactory dataFactory, WebsiteSummaryService websiteSummaryService)
+    public WebsiteController(IWebsiteRepository websiteRepository, DataFactory dataFactory, WebsiteSummaryService websiteSummaryService, ILogger<WebsiteController> logger)
     {
         _websiteRepository = websiteRepository;
         _dataFactory = dataFactory;
         _websiteSummaryService = websiteSummaryService;
+        _logger = logger;
     }
 
     #region Website endpoints
@@ -185,6 +187,10 @@ public class WebsiteController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching website summaries.");
+            Console.WriteLine("Summaries error: " + ex.Message);
+
+            // Return a 500 Internal Server Error
             return StatusCode(500, "Internal server error");
         }
     }

@@ -1,6 +1,7 @@
 ﻿
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Xml;
 using Amazon.SecurityToken.Model;
 using HtmlAgilityPack;
 using SaleCheck.HtmlLib;
@@ -14,61 +15,53 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
         {
             string html = await page.GetHtmlContent();
             if (html == null) return new List<Page>();
+
             string pattern = @"Sitemap:\s*(https?://\S+|/\S+)";
             MatchCollection matches = Regex.Matches(html, pattern);
-            List<Page> sitemapPages = new List<Page>();
+            List<Page> pages = new List<Page>();
+            Console.WriteLine("Found {0} sitemap entries in robots.txt.", matches.Count);
 
             foreach (Match match in matches)
             {
-                string link = match.Groups[1].Value;
-                sitemapPages.Add(new Page("sportyfit", link));
-                Console.WriteLine("HTTP MATCH: " + link);
-            }
+                string sitemapUrl = match.Groups[1].Value;
 
-            return sitemapPages;
-        }
-        
-        public async Task<List<Page>> GetSitemapLinks(Page page)
-        {
-            Console.WriteLine("Sitemap URL (top) added: " + page.GetUrl());
-            string? content = await page.GetHtmlContent();
-            if (content == null) return new List<Page>();
-            int start = content.IndexOf("xsl\"?");
-            int end = content.IndexOf("<!--");
-            string contentSub = content.Substring(start + 5, end-start + 4);
-            string pattern = @">https://[^\s<]+<";
-            MatchCollection matches = Regex.Matches(content, pattern);
-            
-            Console.WriteLine(contentSub);
-            Html html = new Html(contentSub);
-            
-
-            List<Page> pages = new List<Page>();
-            
-            foreach (Match parent in matches)
-            {
-                string? link = parent
-                Console.WriteLine("Link: " + link);
-                if(link == null) continue;
-                
-                Page sitemapPage = new Page("sportyfit", link);
-                Console.WriteLine("SitemapPage contains: " + sitemapPage.GetUrl());
-                if (link.Contains(".xml"))
+                // Ensure full URL for relative links
+                if (!sitemapUrl.StartsWith("http"))
                 {
-                    List<Page> deeperSitemaps = await GetSitemapLinks(sitemapPage);
-                    pages.AddRange(deeperSitemaps);
-                }
-                else
-                {
-                    pages.Add(sitemapPage);
-                    Console.WriteLine("Added sitemap: " + sitemapPage.GetUrl());
+                    sitemapUrl = page.GetUrl().TrimEnd('/') + sitemapUrl;
                 }
 
-                
+                // Filter only Danish links or links in Danish context
+                if (!sitemapUrl.Contains(".dk") && !sitemapUrl.Contains("da_dk"))
+                {
+                    continue;
+                }
+
+                var sitemapPages = await GetAllPagesFromSitemap(sitemapUrl, SampleSites.SportyFit.Title);
+                pages.AddRange(sitemapPages);
             }
 
             return pages;
         }
+
+        public async Task<List<Page>> GetSitemapLinks(Page page)
+        {
+            string html = await page.GetHtmlContent();
+            if (html == null) return new List<Page>();
+            string pattern = @">https://[^\s<]+<";
+            MatchCollection matches = Regex.Matches(html, pattern);
+            List<Page> pages = new List<Page>();
+
+            foreach (Match match in matches)
+            {
+                // Remove the wrapping '>' and '<'
+                string link = match.Value.Trim('>', '<');
+                pages.Add(new Page(SampleSites.SportyFit.Title,link));
+            }
+
+            return pages;
+        }
+        
         private static decimal ParsePrice(string? priceText)
         {
             if(priceText == null) return -1;
@@ -105,6 +98,89 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 else productItems.Add(new ProductItem(url, name, id, price, discount));
             }
             return productItems;
+        }
+        
+        public async Task<List<string>> GetAllUrlsFromSitemap(string sitemapUrl)
+        {
+            var allUrls = new List<string>();
+            await ProcessSitemap(sitemapUrl, allUrls);
+            return allUrls;
+        }
+
+        private async Task ProcessSitemap(string sitemapUrl, List<string> allUrls)
+        {
+            Console.WriteLine($"Processing sitemap: {sitemapUrl}");
+            string content = await GetContent(sitemapUrl);
+
+            if (string.IsNullOrEmpty(content))
+            {
+                Console.WriteLine($"Failed to retrieve content from {sitemapUrl}");
+                return;
+            }
+
+            XmlDocument xmlDoc = new XmlDocument();
+            try
+            {
+                xmlDoc.LoadXml(content);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing XML from {sitemapUrl}: {ex.Message}");
+                return;
+            }
+
+            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+            nsmgr.AddNamespace("ns", "http://www.sitemaps.org/schemas/sitemap/0.9");
+
+            // Check if it's a sitemap index
+            XmlNodeList sitemapNodes = xmlDoc.SelectNodes("//ns:sitemap/ns:loc", nsmgr);
+            if (sitemapNodes != null && sitemapNodes.Count > 0)
+            {
+                // It's a sitemap index; process each nested sitemap
+                foreach (XmlNode sitemapNode in sitemapNodes)
+                {
+                    string nestedSitemapUrl = sitemapNode.InnerText.Trim();
+                    await ProcessSitemap(nestedSitemapUrl, allUrls);
+                }
+            }
+            else
+            {
+                // It's a URL sitemap; extract URLs
+                XmlNodeList urlNodes = xmlDoc.SelectNodes("//ns:url/ns:loc", nsmgr);
+                foreach (XmlNode urlNode in urlNodes)
+                {
+                    string url = urlNode.InnerText.Trim();
+                    // Filter only Danish links or links in Danish context
+                    if (url.Contains(".dk") || url.Contains("da_dk"))
+                    {
+                        allUrls.Add(url);
+                        Console.WriteLine($"Added URL: {url}");
+                    }
+                }
+            }
+        }
+
+        private async Task<string> GetContent(string url)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    return await client.GetStringAsync(url);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching content from {url}: {ex.Message}");
+                    return null;
+                }
+            }
+        }
+        
+        private async Task<List<Page>> GetAllPagesFromSitemap(string sitemapUrl, string websiteTitle)
+        {
+            var urls = await GetAllUrlsFromSitemap(sitemapUrl);
+            List<Page> pages = urls.Select(url => new Page(websiteTitle, url)).ToList();
+            return pages;
         }
 
         

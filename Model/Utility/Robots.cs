@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace SaleCheck.Model.Utility;
 
@@ -20,33 +21,54 @@ public class Robots(string title, string url)
     }
     private async Task LoadSiteMaps()
     {
-        if (_page == null) if(!await LoadRobots()) return; 
-        string? html = await _page.GetHtmlContent() ?? null;
-        if (html == null) return; //returns if none is found
-        IProductAnalyser? analyser = ProductAnalyser.GetAnalyser(title) ?? null;
-        if (analyser == null) return;
+        if (_page == null)
+            if (!await LoadRobots())
+                return;
+
+        string? html = await _page.GetHtmlContent();
+        if (html == null)
+            return; // Returns if none is found
+
+        IProductAnalyser? analyser = ProductAnalyser.GetAnalyser(title);
+        if (analyser == null)
+            return;
+
         List<Page> sitemapLinks = await analyser.GetRobotsSitemapLink(_page);
         _siteMaps = new List<SiteMap>();
-        foreach (Page sitemapLink in sitemapLinks)
+
+        var siteMapTasks = sitemapLinks.Select(async sitemapLink =>
         {
-            _siteMaps.Add(new SiteMap(title, sitemapLink.GetUrl()));
-        }
+            var siteMap = new SiteMap(title, sitemapLink.GetUrl());
+            await siteMap.LoadSiteMapsAsync();
+            _siteMaps.Add(siteMap);
+        });
+
+        await Task.WhenAll(siteMapTasks);
     }
+
     
     
 
     public async Task<List<Page>> GetAllSitemapPages()
     {
-        List<Page> allPages = new List<Page>();
         List<SiteMap> sitemaps = await GetSiteMaps();
-        foreach (SiteMap siteMap in sitemaps)              
+        var allPages = new ConcurrentBag<Page>();
+
+        var pageTasks = sitemaps.Select(async siteMap =>
         {
             await siteMap.LoadSiteMapsAsync();
             List<Page> siteMapPages = siteMap.GetPages();
-            allPages.AddRange(siteMapPages);
-        }
-        return allPages;
+            foreach (var page in siteMapPages)
+            {
+                allPages.Add(page);
+            }
+        });
+
+        await Task.WhenAll(pageTasks);
+
+        return allPages.ToList();
     }
+
 
     public async Task<Dictionary<string, ProductItem>> GetAllProducts()
     {
@@ -57,14 +79,22 @@ public class Robots(string title, string url)
     private async Task LoadProducts()
     {
         List<Page> pages = await GetAllSitemapPages();
-        foreach (Page page in pages)
+
+        var productTasks = pages.Select(async page =>
         {
             List<ProductItem> products = await page.GetProducts();
-            foreach (ProductItem product in products)
+
+            lock (_products)
             {
-                _products.TryAdd(product.Id, product);
+                foreach (ProductItem product in products)
+                {
+                    _products.TryAdd(product.Id, product);
+                }
             }
-        }
+        });
+
+        await Task.WhenAll(productTasks);
     }
+
     
 }

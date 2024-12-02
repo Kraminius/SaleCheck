@@ -17,5 +17,12 @@ public static class SampleSites
         public static readonly string CateogrySite =
             "https://vinduesgrossisten.dk/vinduer/scandiline/sidehaengte-vinduer";
     }
+
+    public static class SportyFit
+    {
+        public static readonly string Link = "https://sportyfit.dk/";
+        public static readonly string Title = "sportyfit";
+        public static readonly string CategorySite = "https://www.sportyfit.dk/vare-kategori/traeningsudstyr/";
+    }
    
 }

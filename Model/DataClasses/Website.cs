@@ -26,6 +26,9 @@ namespace SaleCheck.Model.DataClasses
 
         [BsonElement("Subsites")]
         public List<Subsite> Subsites { get; set; } = new List<Subsite>();
+        
+        [BsonElement("LastScrapedDate")]
+        public DateTime? LastScrapedDate { get; set; }
     }
 
 }

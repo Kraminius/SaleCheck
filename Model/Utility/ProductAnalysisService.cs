@@ -23,13 +23,11 @@ public class ProductAnalysisService
             {
                 // The product is on sale, increase the streak
                 saleStreak++;
-                Console.WriteLine($"Sale streak: {saleStreak} on {price.Date}");
 
                 lastDiscountDate = price.Date;
 
-                if (saleStreak > 5)
+                if (saleStreak > 14)
                 {
-                    Console.WriteLine($"Violation detected on {price.Date}");
                     return true;
                 }
             }
