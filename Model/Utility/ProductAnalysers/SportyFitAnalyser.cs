@@ -75,7 +75,7 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
             string? content = await page.GetHtmlContent();
             if (content == null) return new List<ProductItem>();
             Html html = new Html(content);
-            List<Tag> parents = html.SearchForTags(new Filter().Tag("div").Property("data-elementor-type", "loop-item"));
+            List<Tag> parents = html.SearchForTags(new Filter().Tag("div").Property("class", "e-loop-item"));
             List<ProductItem> productItems = new List<ProductItem>();
             foreach (Tag parent in parents)
             {

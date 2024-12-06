@@ -46,8 +46,15 @@ public class Robots(string title, string url)
         await Task.WhenAll(siteMapTasks);
     }
 
-    
-    
+    public async Task<String?> GetRobotsContent()
+    {
+        if (_page == null)
+        {
+            return null;
+        } 
+        return await this._page!.GetHtmlContent();
+    }
+
 
     public async Task<List<Page>> GetAllSitemapPages()
     {

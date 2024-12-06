@@ -33,6 +33,35 @@ public class ScheduledTaskService : BackgroundService
         }
     }
 
+    public async Task ResetScrapeDate()
+    {
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var websiteRepository = scope.ServiceProvider.GetRequiredService<IWebsiteRepository>();
+
+            try
+            {
+                var websites = await websiteRepository.GetAllWebsitesAsync();
+
+                foreach (var website in websites)
+                {
+                    Console.WriteLine("Resat time of website: {0}", website.WebsiteName);
+                    website.LastScrapedDate = DateTime.UtcNow.AddDays(-1);
+                    
+                    await websiteRepository.UpdateWebsiteAsync(website.WebsiteId, website);
+
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        
+    } 
+
     public async Task RunScheduledTask(CancellationToken cancellationToken)
 {
     using (var scope = _serviceProvider.CreateScope())
@@ -71,7 +100,7 @@ public class ScheduledTaskService : BackgroundService
             // Iterate over each website
             foreach (var website in websites)
             {
-                if (website.LastScrapedDate.HasValue && website.LastScrapedDate.Value.Date == today)
+                if (website.LastScrapedDate.HasValue && website.LastScrapedDate.Value >= DateTime.UtcNow.Date)
                 {
                     Console.WriteLine($"Skipping website {website.WebsiteId} as it has already been scraped today.");
                     continue;

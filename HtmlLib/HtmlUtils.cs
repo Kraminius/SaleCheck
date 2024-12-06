@@ -6,8 +6,19 @@ public static class HtmlUtils
     public static string Trim(string html)
     {
         html = html.Trim();
-        html = html.Replace("<!DOCTYPE html>", "");
-        html = html.Replace("<!doctype html>", "");
+        html = html.Replace("<!DOCTYPE html>", "", StringComparison.OrdinalIgnoreCase);
+        html = html.Replace("<!doctype html>", "", StringComparison.OrdinalIgnoreCase);
+        
+        int startHead = html.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
+        int endHead = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+
+        if (startHead != -1 && endHead != -1)
+        {
+            // Calculate the length to remove, including the closing </head> tag
+            int lengthToRemove = (endHead + "</head>".Length) - startHead;
+            html = html.Remove(startHead, lengthToRemove);
+        }
+            
         return html;
     }
     private static bool IsSelfClosingTag(string tag)
@@ -59,6 +70,7 @@ public static class HtmlUtils
 
     private static bool IsTag(string tag)
     {
+        if (tag.Equals("")) return false; 
         if (tag.Contains("!--")) return true; //html comments
         if (tag[0] == ' ') return false;
         tag = tag.ToLower();
@@ -232,37 +244,60 @@ public static class HtmlUtils
     
     /**
   * @param string str, a string that could contain properties
-  * @returns List of string, the properties and their values in order.
+  * @returns List of Property, the properties and their values in order.
   */
-    private static List<string> ParseProperties(string str){
-        List<string> list = new List<string>();
+    private static List<Property> ParseProperties(string str)
+    {
+        List<Property> properties = new List<Property>();
         char[] arr = str.ToCharArray();
-        string current = "";
+        string key = "";
+        string value = "";
         bool isInString = false;
-        for(int i = 0; i < arr.Length; i++){
-            if(arr[i]== '"') {
-                if(i > 0 && !arr[i-1].Equals('/') ) {
-                    isInString = !isInString;
+        bool isParsingValue = false;
+
+        for (int i = 0; i < arr.Length; i++)
+        {
+            char current = arr[i];
+
+            if (current == '"')
+            {
+                isInString = !isInString;
+            }
+            else if (current == '=' && !isInString)
+            {
+                isParsingValue = true;
+            }
+            else if (char.IsWhiteSpace(current) && !isInString)
+            {
+                if (!string.IsNullOrEmpty(key))
+                {
+                    properties.Add(new Property(key, value));
+                    key = "";
+                    value = "";
+                    isParsingValue = false;
                 }
             }
-            else if(arr[i].Equals(' ')){
-                if(!isInString){
-                    list.Add(current);
-                    current = "";
+            else
+            {
+                if (isParsingValue)
+                {
+                    value += current;
                 }
-                else current += arr[i];
-            }
-            else if(arr[i].Equals('=')){
-                if(!isInString){
-                    list.Add(current);
-                    current = "";
+                else
+                {
+                    key += current;
                 }
             }
-            else current += arr[i];
         }
-        list.Add(current);
-        return list;
+        
+        if (!string.IsNullOrEmpty(key))
+        {
+            properties.Add(new Property(key, value));
+        }
+
+        return properties;
     }
+
     /** 
      * @param string html, a html to be parsed into an object-oriented format.
      * @param Tag parent, the parent tag, that will hold the children.
@@ -270,121 +305,104 @@ public static class HtmlUtils
      */
     public static string ParseHtml(string html, Tag parent)
     {
-        if (parent.TagType == "script" || parent.TagType.Contains("<--")) //Is script or html comment
+        int currentIndex = 0;
+
+        while (currentIndex < html.Length)
         {
-            parent.Content = html;
-            return "";
-        }
-        int globalStartIndex = 0;
-        int openStartIndex;
-        while (true)
-        {
-            openStartIndex = html.IndexOf('<', globalStartIndex);
-            if (openStartIndex == -1) //End of html
+            // Find the next opening tag
+            int openStartIndex = html.IndexOf('<', currentIndex);
+            if (openStartIndex == -1) 
             {
-                parent.Content += html;
-                return "";
+                // No more tags, remaining content is plain text
+                parent.Content += html.Substring(currentIndex).Trim();
+                break;
             }
-            globalStartIndex = openStartIndex + 1;
-            if(html[globalStartIndex].Equals('/')) continue; //Found a closing tag, that is not what we are looking for.
-            if(html[globalStartIndex].Equals(' ')) continue; //Found a space like '< ' meaning it is probably in text
-            break;
+
+            // Add text content between the last tag and this one
+            if (openStartIndex > currentIndex)
+            {
+                parent.Content += html.Substring(currentIndex, openStartIndex - currentIndex).Trim();
+            }
+
+            // Find the end of the opening tag
+            int openEndIndex = html.IndexOf('>', openStartIndex);
+            if (openEndIndex == -1)
+            {
+                throw new FormatException("Malformed HTML: Missing '>' for opening tag.");
+            }
+
+            // Extract tag information
+            string tagDefinition = html.Substring(openStartIndex + 1, openEndIndex - openStartIndex - 1).Trim();
+
+            // Handle closing tags
+            if (tagDefinition.StartsWith("/"))
+            {
+                return html.Substring(openEndIndex + 1); // Return remaining HTML
+            }
+
+            // Check for self-closing tag
+            bool selfClosing = IsSelfClosingTag(tagDefinition) || tagDefinition.EndsWith("/");
+
+            // Parse the tag
+            Tag childTag = ParseTag(tagDefinition);
+            parent.ChildTags.Add(childTag);
+
+            if (selfClosing)
+            {
+                currentIndex = openEndIndex + 1;
+                continue;
+            }
+
+            // Recursively parse children
+            string childHtml = html.Substring(openEndIndex + 1);
+            string remainingHtml = ParseHtml(childHtml, childTag);
+
+            // Move to the remaining HTML
+            currentIndex = html.Length - remainingHtml.Length;
         }
-        parent.Content += html.Substring(0, openStartIndex);
-        int openEndIndex = html.IndexOf('>', openStartIndex);
-        if (openEndIndex == -1)
-        {
-            //Invalid html format, missing '>' after '<'
-            parent.Content += html.Substring(openStartIndex);
-            return "";
-        }
-        Tag? tag = null;
-        try
-        {
-            tag = ReadTagAndProperties(html, openStartIndex, openEndIndex);
-        }
-        catch (FormatException e)
-        {
-            if (parent.TagType == "script") return ""; //Someone inserted < into a piece of text like in a written for loop or a lesser sign.
-            throw;
-        }
-        parent.ChildTags.Add(tag);
-        if (IsSelfClosingTag(tag.TagType))
-        {
-            if (openEndIndex + 1 >= html.Length) return "";
-            return html.Substring(openEndIndex + 1);
-        }
-        int closingStartIndex = IndexOfClosingTag(html, tag.TagType, openEndIndex);
-        if (closingStartIndex == -1)
-        {
-            parent.Content += html;
-            return "";
-        }
-        int closingEndIndex = html.IndexOf('>', closingStartIndex);
-        if(closingEndIndex == -1) throw new FormatException("Invalid html format, '>' is missing for closing tag: " + tag.TagType);
-        string childrenHtml = html.Substring(openEndIndex+1, closingStartIndex-openEndIndex-1);
-        while(true)
-        {
-            childrenHtml = ParseHtml(childrenHtml, tag);
-            if(childrenHtml.Length == 0) break;
-        }
-        if (closingEndIndex + 1 >= html.Length) return "";
-        return html.Substring(closingEndIndex + 1);
+
+        return html.Substring(currentIndex);
     }
+
 
     private static int IndexOfClosingTag(string html, string tag, int startIndex)
     {
-        int total = 0;
-        int opens = 0;
-        int closes = 0;
-        int last = 0;
-        while (true)
+        Stack<int> openTags = new Stack<int>();
+        while (startIndex < html.Length)
         {
-            last = startIndex;
-            int nextIndexOfCloser = html.IndexOf("</"+tag, startIndex, StringComparison.Ordinal);
-            if(nextIndexOfCloser == -1) return -1;
-            int nextIndexOfOpener = html.IndexOf('<'+tag, startIndex, StringComparison.Ordinal);
-            if(nextIndexOfOpener == -1) 
+            int openIndex = html.IndexOf($"<{tag}", startIndex, StringComparison.OrdinalIgnoreCase);
+            int closeIndex = html.IndexOf($"</{tag}>", startIndex, StringComparison.OrdinalIgnoreCase);
+
+            if (openIndex != -1 && (closeIndex == -1 || openIndex < closeIndex))
             {
-                if(opens == closes) return nextIndexOfCloser;
-                closes++;
-                startIndex = nextIndexOfCloser + tag.Length + 1;
-                continue;
+                openTags.Push(openIndex);
+                startIndex = openIndex + tag.Length;
             }
-            if (nextIndexOfOpener < nextIndexOfCloser)
+            else if (closeIndex != -1)
             {
-                startIndex = nextIndexOfOpener + tag.Length + 1;
-                opens++;
-            }
-            else if (opens == closes)
-            {
-                return nextIndexOfCloser;
+                if (openTags.Count > 0)
+                    openTags.Pop();
+                else
+                    return closeIndex; // Found unmatched closing tag
+                startIndex = closeIndex + tag.Length;
             }
             else
             {
-                startIndex = nextIndexOfCloser+ tag.Length + 1;
-                closes++;
+                break; // No more tags
             }
-
-            if (startIndex < last)
-            {
-                return -1;
-            };
         }
+        return openTags.Count == 0 ? -1 : openTags.Peek();
     }
 
-    private static Tag ReadTagAndProperties(string html, int startIndex, int endIndex)
+
+    private static Tag ParseTag(string tagDefinition)
     {
-        string insideHtml = html.Substring(startIndex + 1, endIndex - startIndex - 1);
-        List<String> components = HtmlUtils.ParseProperties(insideHtml);
-        string tagType = components[0];
-        if(!HtmlUtils.IsTag(tagType)) throw new FormatException("Invalid tag type: " + components[0] + " : " + insideHtml);
-        List<Property> properties = new List<Property>();
-        for (int i = 1; i+1 < components.Count; i+=2)
-        {
-            properties.Add(new Property(components[i], components[i+1]));
-        }
-        Tag tag = new Tag(tagType, properties);
-        return tag;
+        string[] parts = tagDefinition.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+        string tagType = parts[0].ToLower();
+        string properties = parts.Length > 1 ? parts[1] : string.Empty;
+
+        List<Property> parsedProperties = ParseProperties(properties);
+        return new Tag(tagType, parsedProperties);
     }
+
 }

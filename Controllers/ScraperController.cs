@@ -37,4 +37,28 @@ public class ScraperController : ControllerBase
             }
         }
     }
+
+    [HttpPost("resetscraper")]
+    public async Task<IActionResult> ResetScraper()
+    {
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var scheduledTaskService = scope.ServiceProvider.GetRequiredService<ScheduledTaskService>();
+            if (scheduledTaskService == null)
+            {
+                return StatusCode(500, "ScheduledTaskService could not be resolved.");
+            }
+
+            try
+            {
+                await scheduledTaskService.ResetScrapeDate();
+                return Ok("Scraper run successfully.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error occurred while running the scraper: {e.Message}");
+                return StatusCode(500, $"Error: {e.Message}");
+            }
+        }
+    }
 }
