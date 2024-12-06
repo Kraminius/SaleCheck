@@ -73,15 +73,17 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
         public async Task<List<ProductItem>> Analyze(Page page)
         {
             string? content = await page.GetHtmlContent();
+            
             if (content == null) return new List<ProductItem>();
             Html html = new Html(content);
             List<Tag> parents = html.SearchForTags(new Filter().Tag("div").Property("class", "e-loop-item"));
             List<ProductItem> productItems = new List<ProductItem>();
             foreach (Tag parent in parents)
             {
-                string? id = html.SearchForTag(new Filter().Tag("div").Property("class", "yith-wcwl-add-to-wishlist"), parent)?.GetProperty("product_id");
+                
                 string? url = html.SearchForTag(new Filter().Tag("a").Property("class", "elementor-element").Property("data-element_type", "container"), parent)?.GetProperty("href");
                 string? name = html.SearchForTag(new Filter().Tag("p").Property("class", "elementor-heading-title"), parent)?.ChildTags[0].Content?.Trim();
+                string? id = name;
                 //<p class="price product-page-price price-on-sale price-not-in-stock">
                  
                 
