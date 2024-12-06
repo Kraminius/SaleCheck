@@ -345,8 +345,10 @@ public static class HtmlUtils
 
             // Parse the tag
             Tag childTag = ParseTag(tagDefinition);
+            if (childTag == null) break;
+            
             parent.ChildTags.Add(childTag);
-
+            
             if (selfClosing)
             {
                 currentIndex = openEndIndex + 1;
@@ -395,9 +397,14 @@ public static class HtmlUtils
     }
 
 
-    private static Tag ParseTag(string tagDefinition)
+    private static Tag? ParseTag(string tagDefinition)
     {
         string[] parts = tagDefinition.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+        
+        if (parts.Length == 0)
+        {
+            return null;
+        } 
         string tagType = parts[0].ToLower();
         string properties = parts.Length > 1 ? parts[1] : string.Empty;
 
