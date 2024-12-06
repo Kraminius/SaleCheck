@@ -64,9 +64,10 @@ public class Tag(string type, List<Property> properties)
             childrenString += tag.ToString(indents+1) + "\n";
         }
 
+        string content = Content ?? "";
         return
             indentString + "type: "+ TagType + "\n" +
-            indentString + "content: " + Content + "\n" +
+            indentString + "content: " + content.Trim() + "\n" +
             indentString + "properties: " + propertyString + "\n" +
             indentString + "children: " + childrenString + "\n";
 
