@@ -90,8 +90,11 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 decimal price = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "screen-reader-text").Content("Original price"), parent)?.Content?.Trim());
                 decimal discount = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "screen-reader-text").Content("Current price"), parent)?.Content?.Trim());
                 decimal noDiscount = ParsePrice(html.SearchForTag(new Filter().Tag("span").Property("class", "woocommerce-Price-amount"), parent)?.ChildTags[0]?.Content?.Trim());
-                
-                if (id == null || url == null || name == null) continue;
+
+                if (id == null || url == null || name == null)
+                {
+                    productItems.Add(new ProductItem(url ?? "url is null", name  ?? "name is null", id ?? "id is null", 0));
+                }
                 if (price == -1 || discount == -1)
                 {
                     productItems.Add(new ProductItem(url, name, id, noDiscount));
