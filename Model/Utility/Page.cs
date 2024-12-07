@@ -1,7 +1,6 @@
-﻿
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Security.Authentication;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
@@ -14,120 +13,116 @@ namespace SaleCheck.Model.Utility;
 
 public class Page(string title, string url, Page? parent = null, int retryCount = 1)
 {
-    private string _title = title;
-    private string? _htmlContent;
+    private static readonly HttpClientHandler handler = new HttpClientHandler
+    {
+        AllowAutoRedirect = true,
+        ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+    };
+
+    private static readonly HttpClient client = new HttpClient(handler)
+    {
+        Timeout = TimeSpan.FromSeconds(600)
+    };
+
+    static Page()
+    {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+
+        // Mimic `curl` headers
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+        client.DefaultRequestHeaders.Add("Accept", "*/*");
+        client.DefaultRequestHeaders.Add("Connection", "keep-alive");
+    }
+
+    private readonly string _title = title;
+    private readonly string url = url;
     private string? _fully_rendered_htmlContent;
-    
-    private List<string> hrefs = new List<string>();
-    private List<ProductItem> products = new List<ProductItem>();
-    
-    
+    private readonly List<string> hrefs = new List<string>();
+    private readonly List<ProductItem> products = new List<ProductItem>();
+
+    /// <summary>
+    /// Fetch raw HTML content using a shared HttpClient instance.
+    /// </summary>
     private async Task<string?> LoadHtmlContentAsync()
     {
-        HttpClientHandler handler = new HttpClientHandler { AllowAutoRedirect = true };
-        HttpClient client = new HttpClient(handler);
-        
-        // Check if the URL starts with 'tel:'
-        if (url.StartsWith("tel:")) return null;
-        // Add headers to mimic a browser
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
-        client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        client.DefaultRequestHeaders.Add("Accept-Language", "da-DK,da;q=0.5");
-        
-        for (int i = 0; i < retryCount; i++)
+        for (int i = 0; i < retryCount; i++) // Retry logic
         {
             try
             {
                 HttpResponseMessage response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
+
                 return await response.Content.ReadAsStringAsync();
+            }
+            catch (HttpRequestException e) when (e.InnerException is IOException)
+            {
+                Console.WriteLine($"Network error on attempt {i + 1}: {e.InnerException?.Message}");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error: with {url}");
-                Console.WriteLine(e.Message); 
+                Console.WriteLine($"General error on attempt {i + 1}: {e.Message}");
             }
+
+            await Task.Delay(2000); // Retry delay
         }
-        return "";
+
+        throw new Exception($"Failed to fetch {url} after {retryCount} retries.");
     }
 
+    /// <summary>
+    /// Fetch rendered HTML content using Selenium ChromeDriver (for JavaScript-rendered pages).
+    /// </summary>
     public async Task<string> LoadRenderedHtmlContentAsync()
     {
-        // Set ChromeDriver options
         var options = new ChromeOptions();
-        options.AddArgument("--headless"); // Run in headless mode
+        options.AddArgument("--headless");
         options.AddArgument("--disable-gpu");
         options.AddArgument("--window-size=1920,1080");
 
-        // Initialize WebDriver
         using (IWebDriver driver = new ChromeDriver(options))
         {
-            // Navigate to the Elgiganten website
             driver.Navigate().GoToUrl(url);
-            /*
-            // Optionally handle cookies or pop-ups
-            try
-            {
-                // Wait for the cookie consent button and click it
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-                IWebElement acceptCookiesButton = wait.Until(drv => drv.FindElement(By.Id("onetrust-accept-btn-handler")));
-                acceptCookiesButton.Click();
-            }
-            catch (WebDriverTimeoutException)
-            {
-                return "No Cookies" + driver.PageSource; 
-            }*/
-
-            await Task.Delay(10000); // Optional: wait for 2 seconds to ensure the page is fully loaded
-
-            // Return the rendered HTML content after clicking the button
+            await Task.Delay(10000); // Wait for the page to load
             return driver.PageSource;
         }
     }
 
-
-
+    /// <summary>
+    /// Alternative: Use Playwright for rendering JavaScript content.
+    /// </summary>
     private async Task LoadRenderedHtmlContentAsyncOld()
     {
-        // Start a headless browser instance
-        var playwright = await Playwright.CreateAsync();
+        using var playwright = await Playwright.CreateAsync();
         var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = true,
-            Args = new[] { "--disable-http2" }  // Disable HTTP/2 protocol
+            Args = new[] { "--disable-http2" } // Disable HTTP/2 if needed
         });
+
         var page = await browser.NewPageAsync();
 
         try
         {
-            // Navigate to the page
-            await page.GotoAsync(url);
-
-            // Wait for the dynamic content to load (you can customize this wait)
-            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-            // Extract the fully rendered HTML content
-            string content = await page.ContentAsync();
-            await browser.CloseAsync();
-            _fully_rendered_htmlContent = content;
+            await page.GotoAsync(url, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+            _fully_rendered_htmlContent = await page.ContentAsync();
         }
-        catch (Exception e)
+        finally
         {
-            Console.WriteLine($"Error: {url}");
-            Console.WriteLine(e.Message);
             await browser.CloseAsync();
-            _fully_rendered_htmlContent = e.Message;
         }
     }
-    
+
     public async Task<string?> GetHtmlContent()
     {
-        if(_htmlContent == null) _htmlContent = await LoadHtmlContentAsync();
-        return _htmlContent;
+        return await LoadHtmlContentAsync();
     }
+
     public async Task<string?> GetRenderedHtmlContent()
     {
-        if(_fully_rendered_htmlContent == null) _fully_rendered_htmlContent = await LoadRenderedHtmlContentAsync();
+        if (_fully_rendered_htmlContent == null)
+        {
+            _fully_rendered_htmlContent = await LoadRenderedHtmlContentAsync();
+        }
         return _fully_rendered_htmlContent;
     }
 
@@ -142,22 +137,28 @@ public class Page(string title, string url, Page? parent = null, int retryCount 
 
     public async Task LoadHrefs()
     {
-        hrefs = new List<string>();
+        hrefs.Clear();
         var htmlDoc = new HtmlDocument();
         string? content = await GetHtmlContent();
         if (content == null) return;
+
         htmlDoc.LoadHtml(content);
-        // Select all product cards using the data-testid attribute
         var hrefsFinds = htmlDoc.DocumentNode.SelectNodes("//a/@href");
-        foreach (var href in hrefsFinds)
+        if (hrefsFinds != null)
         {
-            hrefs.Add(href.GetAttributeValue("href", "")); // Add the value of href attribute to the list        
+            foreach (var href in hrefsFinds)
+            {
+                hrefs.Add(href.GetAttributeValue("href", ""));
+            }
         }
     }
 
     public async Task<List<ProductItem>> GetProducts()
     {
-        if(products.Count == 0) await LoadProducts(ProductAnalyser.GetAnalyser(_title));
+        if (products.Count == 0)
+        {
+            await LoadProducts(ProductAnalyser.GetAnalyser(_title));
+        }
         return products;
     }
 
@@ -168,37 +169,12 @@ public class Page(string title, string url, Page? parent = null, int retryCount 
             Console.WriteLine("No analyser for this page");
             return;
         }
-        products = await analyser.Analyze(this);
+        products.Clear();
+        products.AddRange(await analyser.Analyze(this));
     }
-    
+
     public string GetUrl()
     {
         return url;
     }
 }
-
-
-/*
-
-        string pattern = @"<div class=""product-info-price"">.*?data-product-id=""(\d+)""";
-        Match match = Regex.Match(content, pattern);
-        string productId = match.Success ? match.Groups[1].Value : "undefined";
-        
-        string patternCategory = @"<div class=""page-title"">.*?<h1 class=""product-category"" itemprop=""name"">\s*(.*?)\s*</h1>"; //category
-        string patternSku = @"<meta itemprop=""sku"" content=""(.*?)"""; //name
-
-
-        // Find the product category using the regex pattern
-        Match matchCategory = Regex.Match(content, patternCategory, RegexOptions.Singleline);
-        string? productCategory = matchCategory.Success ? matchCategory.Groups[1].Value.Trim() : null;
-
-        // Find the product Name using the regex pattern
-        Match matchName = Regex.Match(content, patternSku, RegexOptions.Singleline);
-        string? productName = matchName.Success ? matchName.Groups[1].Value.Trim() : null;
-
-        string productFullName = productCategory != null && productName != null ? $"{productCategory} ({productName})" : "undefined";
-
-        string oldPrice = "not found";
-        string newPrice = "not found";
-        
-*/
