@@ -87,21 +87,31 @@ public class Robots(string title, string url)
     {
         List<Page> pages = await GetAllSitemapPages();
 
-        var productTasks = pages.Select(async page =>
+        
+        const int batchSize = 50;
+        for (int i = 0; i < pages.Count; i += batchSize)
         {
-            List<ProductItem> products = await page.GetProducts();
-
-            lock (_products)
+            var batch = pages.Skip(i).Take(batchSize);
+            var productTasks = batch.Select(async page =>
             {
-                foreach (ProductItem product in products)
-                {
-                    _products.TryAdd(product.Id, product);
-                }
-            }
-        });
+                List<ProductItem> products = await page.GetProducts();
 
-        await Task.WhenAll(productTasks);
+                lock (_products)
+                {
+                    foreach (ProductItem product in products)
+                    {
+                        _products.TryAdd(product.Id, product);
+                    }
+                }
+            });
+
+            await Task.WhenAll(productTasks);
+            
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
     }
+
 
     
 }
