@@ -108,10 +108,7 @@ public class ScheduledTaskService : BackgroundService
 
                 Console.WriteLine($"Updating website: {website.WebsiteId}");
                 await dataFactory.UpdateWebsiteByCheckingExistingSubsites(website.WebsiteId, true);
-
-                // Update LastScrapedDate after successful scraping
-                website.LastScrapedDate = today;
-                await websiteRepository.UpdateWebsiteAsync(website.WebsiteId, website);
+                
             }
 
         }
