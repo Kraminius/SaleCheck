@@ -97,6 +97,7 @@ namespace SaleCheck.Repositories
             {
                 _logger.LogInformation($"Updating website with id: {id}");
                 var result = await _websites.ReplaceOneAsync(w => w.WebsiteId.Equals(id), website);
+                Console.WriteLine(website.Products.Count);
                 if (result.MatchedCount == 0)
                 {
                     _logger.LogWarning($"Website with id: {id} not found");
