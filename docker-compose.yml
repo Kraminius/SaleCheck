@@ -1,0 +1,26 @@
+﻿services:
+  salecheck:
+    image: salecheck:latest
+    container_name: salecheck
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+    depends_on:
+      - salecheckdb
+    links:
+      - salecheckdb
+
+  salecheckdb:
+    image: mongo:latest
+    container_name: salecheckdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
