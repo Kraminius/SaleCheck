@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 using SaleCheck.HtmlLib;
 using SaleCheck.Model.Utility;
+using SaleCheck.Model.Utility.ProductAnalysers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -109,6 +110,105 @@ public class SportyFit : IWebsiteTest
         Assert.NotEmpty(products);
         _output.WriteLine("products: " + products.Count);
     }
+    
+    [Fact]
+    public async Task CanFetchAllProducts()
+    {
+        string title = SampleSites.SportyFit.Title;
+        List<string> categoryUrls = new List<string>
+{
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/shop-by-activity/styrketraening/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/vaegtskiver/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/vaegtstang/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/vaegtstangssaet/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/kettlebell/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/racks-og-stativer/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/traeningsbaenk/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/racks-og-stativer/opbevaringsstativer/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/haandtag-og-greb/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/shop-by-activity/funktionel-traening/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/slyngetraener/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/foamroller/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/medicinbold/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/slamball/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/agility-stige/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/balancetraening/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/sjippetorv/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/mavehjul/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/gymnastikringe/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/jumpbox-plyo-box/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/prowler/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/battlerope/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/power-bags/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/traeningselastik/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/traeningsmaatte/yoga-maatte/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/traeningsmaatte/",
+    "https://sportyfit.dk/vare-kategori/vandsports-udstyr/",
+    "https://sportyfit.dk/vare-kategori/vandsports-udstyr/bananbaad/",
+    "https://sportyfit.dk/vare-kategori/vandsports-udstyr/sups-paddleboards/",
+    "https://sportyfit.dk/vare-kategori/vandsports-udstyr/kajak/",
+    "https://sportyfit.dk/vare-kategori/vandsports-udstyr/svoemmeudstyr/badedyr/",
+    "https://sportyfit.dk/vare-kategori/gode-tilbud/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/traeningsbaelte/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/fjederlaas/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/vaegtskiver/bumper-plates/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/boksepude-bokseudstyr/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/boksehandsker/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/wallball/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/loebebaand/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/motionscykel/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/romaskiner/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/crosstrainer/",
+    "https://sportyfit.dk/vare-kategori/cardio-maskiner/spinningcykler/",
+    "https://sportyfit.dk/vare-kategori/sport-og-fritid/legetoej/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/gymnastikbold/traeningsbold/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/gulv-og-indretning/rfid-kort/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/haandvaegte/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/yoga-udstyr/",
+    "https://sportyfit.dk/vare-kategori/traeningsudstyr/stepbaenk/"
+};
+
+        
+        var allProducts = new List<ProductItem>();
+        foreach (string url in categoryUrls)
+        {
+            Page page = new Page(title, url);
+
+            _output.WriteLine($"Processing URL: {url}");
+
+            try
+            {
+                List<ProductItem> products = await page.GetProducts();
+
+                if (products.Count == 0)
+                {
+                    _output.WriteLine($"No products found for URL: {url}");
+                }
+                else
+                {
+                    _output.WriteLine($"Found {products.Count} products for URL: {url}");
+                    foreach (ProductItem product in products)
+                    {
+                        _output.WriteLine(product.ToString());
+                    }
+
+                    allProducts.AddRange(products);
+                }
+            }
+            catch (Exception ex)
+            {
+                _output.WriteLine($"Error processing URL {url}: {ex.Message}");
+            }
+        }
+
+        _output.WriteLine($"Total products fetched: {allProducts.Count}");
+
+        // Assert that at least one product was found across all categories
+        Assert.NotEmpty(allProducts);
+    }
+
+    
     [Fact]
     public async Task SaveAllProducts()
     {
