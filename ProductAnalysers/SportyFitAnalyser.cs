@@ -82,8 +82,14 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 {
                     productItems.Add(new ProductItem(url, name, id, noDiscount));
                 }
+                
                 else if (discount == -1) productItems.Add(new ProductItem(url, name, id, price));
-                else productItems.Add(new ProductItem(url, name, id, price, discount));
+                else
+                {
+                    productItems.Add(discount > price
+                        ? new ProductItem(url, name, id, discount, price)
+                        : new ProductItem(url, name, id, price, discount));
+                }
             }
 
             return productItems;

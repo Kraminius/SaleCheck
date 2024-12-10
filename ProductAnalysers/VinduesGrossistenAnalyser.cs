@@ -93,7 +93,12 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 decimal discount = ParsePrice(html.SearchForTag(new Filter().Tag("div").Property("class", "price_oprice_with_discountld"), parent)?.Content?.Trim());
                 if (id == null || url == null || name == null) continue;
                 if(discount == -1) productItems.Add(new ProductItem(url, name, id, price));
-                else productItems.Add(new ProductItem(url, name, id, price, discount));
+                else
+                {
+                    productItems.Add(discount > price
+                        ? new ProductItem(url, name, id, discount, price)
+                        : new ProductItem(url, name, id, price, discount));
+                }
             }
             return productItems;
         }
