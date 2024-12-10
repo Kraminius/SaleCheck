@@ -15,7 +15,8 @@ public class RestrictToLocalNetworkAttribute : ActionFilterAttribute
 
         if (remoteIp == null || !allowedIps.Contains(remoteIp.ToString()))
         {
-            context.Result = new ForbidResult();
+            context.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
+            return;
         }
 
         base.OnActionExecuting(context);

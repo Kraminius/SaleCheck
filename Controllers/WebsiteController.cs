@@ -73,6 +73,25 @@ public class WebsiteController : ControllerBase
         }
     }
     
+    [HttpGet("summaries")]
+    public async Task<ActionResult<IEnumerable<WebsiteSummary>>> GetWebsiteSummaries(int pageNumber = 1, int pageSize = 10)
+    {
+        try
+        {
+            var websites = await _websiteRepository.GetAllWebsitesAsync(pageNumber, pageSize);
+            var summaries = websites.Select(_websiteSummaryService.CreateWebsiteSummary).ToList();
+            return Ok(summaries);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while fetching website summaries.");
+            Console.WriteLine("Summaries error: " + ex.Message);
+
+            // Return a 500 Internal Server Error
+            return StatusCode(500, "Internal server error");
+        }
+    }
+    
     
 
     // <summary>
@@ -340,5 +359,6 @@ public class WebsiteController : ControllerBase
     }
 
     #endregion
+    
     
 }
