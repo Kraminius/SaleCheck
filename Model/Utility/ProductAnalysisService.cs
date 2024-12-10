@@ -1,101 +1,101 @@
-﻿using SaleCheck.Model.DataClasses;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using SaleCheck.Model.DataClasses;
 
-namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility;
-
-public class ProductAnalysisService
+namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
 {
-    public bool CanCheckForViolations(DateTime earliestScrapeDate)
+    public class ProductAnalysisService
     {
-        Console.WriteLine($"Days scraped: {(DateTime.UtcNow - earliestScrapeDate).TotalDays}");
-        return (DateTime.UtcNow - earliestScrapeDate).TotalDays > 5;
-    }
-
-    public bool IsProductInViolation(List<Price> priceHistory)
-    {
-        var sortedPrices = priceHistory.OrderBy(p => p.Date).ToList();
-
-        int saleStreak = 0;
-        DateTime? lastDiscountDate = null;
-
-        foreach (var price in sortedPrices)
+        public bool CanCheckForViolations(DateTime earliestScrapeDate)
         {
-            if (price.DiscountPrice > 0 && (price.DiscountPrice < price.NormalPrice))
-            {
-                // The product is on sale, increase the streak
-                saleStreak++;
-
-                lastDiscountDate = price.Date;
-
-                if (saleStreak > 14)
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                if (lastDiscountDate.HasValue && (price.Date - lastDiscountDate.Value).TotalDays >= 30)
-                {
-                    saleStreak = 0;
-                }
-
-                lastDiscountDate = null;
-            }
+            Console.WriteLine($"Days scraped: {(DateTime.UtcNow - earliestScrapeDate).TotalDays}");
+            return (DateTime.UtcNow - earliestScrapeDate).TotalDays > 5;
         }
 
-        return false;
-    }
-
-    
-    public int CalculateLongestSaleStreak(List<Price> priceHistory)
-    {
-        var sortedPrices = priceHistory.OrderBy(price => price.Date.Date).ToList();  // Use Date only, ignore time
-        int saleStreak = 0;
-        int maxStreak = 0;
-        DateTime? lastDiscountDate = null;
-
-        foreach (var price in sortedPrices)
+        // Check if a product is in violation of the marketing rule.
+        public bool IsProductInViolation(Product product)
         {
-            if (price.DiscountPrice > 0 && price.DiscountPrice < price.NormalPrice)
+            // More than 14 consecutive days on sale is a violation
+            if (product.SaleStreak > 14)
             {
-                
-                if (lastDiscountDate.HasValue && (price.Date.Date - lastDiscountDate.Value.Date).TotalDays == 1)
+                return true;
+            }
+
+            // If starting a new sale streak (SaleStreak == 1) but haven't had at least 30 no-sale days
+            // since last sale, that's a violation.
+            // This logic applies when a new sale period begins. If we just updated today's price and set SaleStreak to 1,
+            // that means we're at the start of a new sale period.
+            if (product.SaleStreak == 1 && product.NoSaleStreak > 0 && product.NoSaleStreak < 30)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public void UpdateStreaksForToday(Product product, Price todaysPrice)
+        {
+            bool onSaleToday = todaysPrice.DiscountPrice > 0 && (todaysPrice.DiscountPrice < todaysPrice.NormalPrice);
+
+            if (onSaleToday)
+            {
+                // If we are starting a new sale period (SaleStreak == 0), check if we had enough no-sale days before this.
+                if (product.SaleStreak == 0 && product.LastSaleDate.HasValue && product.NoSaleStreak < 30)
                 {
-                    saleStreak++;  // Consecutive sale day
+                    // Not enough cooldown. This is a violation scenario, but we still update the state.
+                    product.SaleStreak = 1;
+                    product.NoSaleStreak = 0;
+                    product.LastSaleDate = todaysPrice.Date;
                 }
                 else
                 {
-                    saleStreak = 1;  // Start new streak if it's the first day or not consecutive
-                }
+                    // Continue the sale streak or start a new one properly
+                    if (product.SaleStreak == 0)
+                    {
+                        product.SaleStreak = 1; // New sale streak starts
+                    }
+                    else
+                    {
+                        product.SaleStreak++;
+                    }
 
-                lastDiscountDate = price.Date;
-                
-                if (saleStreak > maxStreak)
-                {
-                    maxStreak = saleStreak;
+                    product.NoSaleStreak = 0;
+                    product.LastSaleDate = todaysPrice.Date;
                 }
             }
             else
             {
-                // Reset the sale streak if there has been 30 days of no sale
-                if (lastDiscountDate.HasValue && (price.Date - lastDiscountDate.Value).TotalDays >= 30)
+                // Not on sale today, increment no sale streak
+                product.NoSaleStreak++;
+
+                // Once NoSaleStreak >= 29, we consider that the sale streak can be reset
+                // because we have had a full 30-day cooldown since the last sale.
+                if (product.NoSaleStreak > 29)
                 {
-                    saleStreak = 0;
+                    product.SaleStreak = 0;
                 }
-                lastDiscountDate = null;
             }
+            
         }
 
-        return maxStreak;
-    }
+        public int CalculateLongestSaleStreak(List<Product> products)
+        {
+            int longestStreak = 0;
+            foreach (var product in products)
+            {
+                if (product.SaleStreak > longestStreak)
+                    longestStreak = product.SaleStreak;
+            }
+            return longestStreak;
+        }
 
-
-    
-    public DateTime GetEarliestEntryDate(IEnumerable<Product> products)
-    {
-        // Find the earliest price entry date across all products -
-        // we need this to check if we can determine if a product went straight on sale.
-        return products
-            .SelectMany(p => p.Price)
-            .Min(p => p.Date);
+        public DateTime GetEarliestEntryDate(IEnumerable<Product> products)
+        {
+            // Find the earliest price entry date across all products
+            return products
+                .SelectMany(p => p.Price)
+                .Min(p => p.Date);
+        }
     }
 }

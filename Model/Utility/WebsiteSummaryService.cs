@@ -14,7 +14,7 @@ public class WebsiteSummaryService
 
     public WebsiteSummary CreateWebsiteSummary(Website website)
     {
-        var productsOnSale = website.Products.Count(p => p.Price.Any(price => price.DiscountPrice > 0));
+        var productsOnSale = website.Products.Count(p => p.SaleStreak > 0);
 
         // Get the earliest entry date across all products to check how long we've scraped the site
         var earliestDate = DateTime.Today;
@@ -32,16 +32,16 @@ public class WebsiteSummaryService
 
         // Count the number of products violating the marketing law
         var productsViolation = canCheckViolations
-            ? website.Products.Count(p => _productAnalysisService.IsProductInViolation(p.Price))
+            ? website.Products.Count(p => _productAnalysisService.IsProductInViolation(p))
             : 0;
+
         Console.WriteLine($"Number of products in violation: {productsViolation}");
-
-
+        
         // Calculate the longest sale streak across all products
         var longestStreak = 0;
         try
         {
-            longestStreak = website.Products.Max(p => _productAnalysisService.CalculateLongestSaleStreak(p.Price));
+            longestStreak = _productAnalysisService.CalculateLongestSaleStreak(website.Products.ToList());
         }
         catch (Exception e)
         {
