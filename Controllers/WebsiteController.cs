@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SaleCheck.Model.DataClasses;
 using SaleCheck.Model.Utility;
@@ -77,6 +78,7 @@ public class WebsiteController : ControllerBase
     // <summary>
     /// Updates an existing website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateWebsite(string id, [FromBody] Website website)
     {
@@ -104,6 +106,7 @@ public class WebsiteController : ControllerBase
     // <summary>
     /// Deletes a website by its ID.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWebsite(string id)
     {
@@ -151,6 +154,7 @@ public class WebsiteController : ControllerBase
     /// <summary>
     /// Updates an existing product within a website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpPut("{websiteId}/products/{productId}")]
     public async Task<IActionResult> UpdateProduct(string websiteId, string productId, [FromBody] Product product)
     {
@@ -175,30 +179,11 @@ public class WebsiteController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
-  
-    [HttpGet("summaries")]
-    public async Task<ActionResult<IEnumerable<WebsiteSummary>>> GetWebsiteSummaries(int pageNumber = 1, int pageSize = 10)
-    {
-        try
-        {
-            var websites = await _websiteRepository.GetAllWebsitesAsync(pageNumber, pageSize);
-            var summaries = websites.Select(_websiteSummaryService.CreateWebsiteSummary).ToList();
-            return Ok(summaries);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while fetching website summaries.");
-            Console.WriteLine("Summaries error: " + ex.Message);
-
-            // Return a 500 Internal Server Error
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
 
     /// <summary>
     /// Deletes a product from a website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpDelete("{websiteId}/products/{productId}")]
     public async Task<IActionResult> DeleteProduct(string websiteId, string productId)
     {
@@ -218,6 +203,7 @@ public class WebsiteController : ControllerBase
         }
     }
     
+    [RestrictToLocalNetwork]
     [HttpPost("{websiteId}/products")]
     public async Task<IActionResult> AddProduct(string websiteId, [FromBody] Product product)
     {
@@ -275,6 +261,7 @@ public class WebsiteController : ControllerBase
     /// <summary>
     /// Creates a new subsite within a website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpPost("{websiteId}/subsites")]
     public async Task<IActionResult> CreateSubsite(string websiteId, [FromBody] Subsite subsite)
     {
@@ -303,6 +290,7 @@ public class WebsiteController : ControllerBase
     /// <summary>
     /// Updates an existing subsite within a website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpPut("{websiteId}/subsites/{url}")]
     public async Task<IActionResult> UpdateSubsite(string websiteId, string url, [FromBody] Subsite subsite)
     {
@@ -331,6 +319,7 @@ public class WebsiteController : ControllerBase
     /// <summary>
     /// Deletes a subsite from a website.
     /// </summary>
+    [RestrictToLocalNetwork]
     [HttpDelete("{websiteId}/subsites/{url}")]
     public async Task<IActionResult> DeleteSubsite(string websiteId, string url)
     {
@@ -351,4 +340,5 @@ public class WebsiteController : ControllerBase
     }
 
     #endregion
+    
 }

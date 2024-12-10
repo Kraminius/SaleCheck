@@ -31,4 +31,8 @@
     <_ContentIncludedByDefault Remove="Website\Views\Main\Index.cshtml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Database\" />
+  </ItemGroup>
+
 </Project>

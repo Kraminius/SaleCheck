@@ -9,5 +9,4 @@ public class WebsiteSummary
     public int ProductsOnSale { get; set; }
     public int ProductsViolation { get; set; }
     public int ProductsLongestCurrentStreak { get; set; }
-    public int PreviousProductsViolation { get; set; }
 }

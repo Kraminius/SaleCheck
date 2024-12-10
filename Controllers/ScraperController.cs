@@ -2,6 +2,7 @@
 
 namespace SaleCheck.Controllers;
 
+
 [ApiController]
 [Route("[controller]")]
 public class ScraperController : ControllerBase
@@ -12,7 +13,8 @@ public class ScraperController : ControllerBase
     {
         _serviceProvider = serviceProvider;
     }
-
+    
+    [RestrictToLocalNetwork]
     [HttpPost("run")]
     public async Task<IActionResult> RunScraper()
     {
@@ -37,7 +39,8 @@ public class ScraperController : ControllerBase
             }
         }
     }
-
+    
+    [RestrictToLocalNetwork]
     [HttpPost("resetscraper")]
     public async Task<IActionResult> ResetScraper()
     {
