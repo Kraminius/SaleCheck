@@ -50,7 +50,12 @@ public class Page(string title, string url, Page? parent = null, int retryCount 
             try
             {
                 HttpResponseMessage response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Non-success status code ({(int)response.StatusCode}) received. Retrying...");
+                    continue; // Skip to the next iteration
+                }
 
                 return await response.Content.ReadAsStringAsync();
             }

@@ -12,34 +12,47 @@ public class DataFactory(IWebsiteRepository websiteRepository)
     {
         Website website = await websiteRepository.GetWebsiteByIdAsync(websiteId);
         Dictionary<string, ProductItem> productItems = new Dictionary<string, ProductItem>();
-        
-        //If subsites == empty
+    
+        // If subsites == empty
         if (!(website.Subsites?.Any() == true))
         {
-            Console.WriteLine("No Subsites found for + " + website.WebsiteName + ", running full check");
+            Console.WriteLine("No Subsites found for " + website.WebsiteName + ", running full check");
             await UpdateWebsiteByCheckingAll(websiteId);
             return;
         }
 
         foreach (Subsite subsite in website.Subsites)
         {
-            if(subsite.Ignore && shouldIgnoreSites) continue;
-            Page page = new Page(website.WebsiteName, subsite.Url);
-            subsite.Html.Add(DateTime.Now.ToString("dd-MM-yyyy") + "debug", page.GetUrl());
-            foreach (ProductItem productItem in await page.GetProducts())
+            if (subsite.Ignore && shouldIgnoreSites) continue;
+
+            try
             {
-                productItems.TryAdd(productItem.Name, productItem);
-                Console.WriteLine(productItem.Name + " - " + productItem.Price);
+                Page page = new Page(website.WebsiteName, subsite.Url);
+                subsite.Html.Add(DateTime.Now.ToString("dd-MM-yyyy") + "debug", page.GetUrl());
+
+                foreach (ProductItem productItem in await page.GetProducts())
+                {
+                    productItems.TryAdd(productItem.Name, productItem);
+                    Console.WriteLine(productItem.Name + " - " + productItem.Price);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing subsite {subsite.Url}: {ex.Message}");
             }
         }
-        foreach(var productKeyValue in productItems)
+
+        foreach (var productKeyValue in productItems)
         {
             ProductItem productItem = productKeyValue.Value;
-            if(DataConvertions.UpdateExistingProduct(website, productItem)) continue;
-            website.Products.Add(DataConvertions.ProductFromProductItem(productKeyValue.Value));
+            if (DataConvertions.UpdateExistingProduct(website, productItem)) continue;
+
+            website.Products.Add(DataConvertions.ProductFromProductItem(productItem));
         }
+
         await websiteRepository.UpdateWebsiteAsync(websiteId, website);
     }
+
     public async Task UpdateWebsiteByCheckingAll(string websiteId)
     {
         Website website = await websiteRepository.GetWebsiteByIdAsync(websiteId);

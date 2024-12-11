@@ -6,7 +6,7 @@ public class ProductAnalysisService
 {
     public bool CanCheckForViolations(DateTime earliestScrapeDate)
     {
-        Console.WriteLine($"Days scraped: {(DateTime.UtcNow - earliestScrapeDate).TotalDays}");
+        Console.WriteLine($"Days scraped: {Math.Floor((DateTime.UtcNow - earliestScrapeDate).TotalDays)}");
         return (DateTime.UtcNow - earliestScrapeDate).TotalDays > 5;
     }
 
