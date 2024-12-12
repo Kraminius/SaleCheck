@@ -4,6 +4,7 @@ using SaleCheck.Model.Utility;
 using SaleCheck.Repositories;
 using SaleCheck.Repositories.Interfaces;
 using SaleCheck.Tests.SaleCheck.Tests.Model.Utility;
+using SaleCheck.Utility;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,8 @@ builder.Services.AddScoped<DataFactory>();
 builder.Services.AddScoped<ProductAnalysisService>();
 builder.Services.AddScoped<WebsiteSummaryService>();
 builder.Services.AddHostedService<ScheduledTaskService>();
+builder.Services.AddScoped<PriceCleanupService>();
+
 // Add ScheduledTaskService as both a singleton and hosted service
 
 builder.Services.AddCors(options =>
