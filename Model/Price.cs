@@ -16,6 +16,6 @@ namespace SaleCheck.Model.DataClasses
 
         [BsonElement("DiscountPrice")]
         [BsonIgnoreIfNull]
-        public double DiscountPrice { get; set; }
+        public double? DiscountPrice { get; set; }
     }
 }

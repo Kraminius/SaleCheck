@@ -86,12 +86,16 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
                 else if (discount == -1) productItems.Add(new ProductItem(url, name, id, price));
                 else
                 {
+                    // Assign the larger value as NormalPrice and the smaller as DiscountPrice
+                    decimal normalPrice = Math.Max(price, discount);
+                    decimal discountPrice = Math.Min(price, discount);
+
                     productItems.Add(new ProductItem(
                         url,
                         name,
                         id,
-                        Math.Max(price, discount), // Always set the larger value as normalPrice
-                        Math.Min(price, discount)  // Always set the smaller value as discountPrice
+                        normalPrice,
+                        discountPrice
                     ));
                 }
             }

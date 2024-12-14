@@ -60,7 +60,7 @@ namespace SaleCheck.Tests.SaleCheck.Tests.Model.Utility
             int discounted = 0;
             foreach (var key in products.Keys)
             {
-                if(products[key].OtherPrice != null) discounted++;
+                if(products[key].DiscountPrice != null) discounted++;
             }
             _output.WriteLine("Total Discounted: " + discounted + "/" + products.Count);
         }

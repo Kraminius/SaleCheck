@@ -29,14 +29,15 @@ namespace SaleCheck.Utility
 
                         foreach (var priceEntry in product.Price)
                         {
-                            if (priceEntry.DiscountPrice > priceEntry.NormalPrice)
+                            if (priceEntry.DiscountPrice.HasValue && priceEntry.DiscountPrice > priceEntry.NormalPrice)
                             {
                                 // Swap the prices
                                 _logger.LogWarning(
                                     $"Price issue found in Product ID: {product.ProductId}, Website ID: {website.WebsiteId}. Fixing...");
-                                (priceEntry.NormalPrice, priceEntry.DiscountPrice) = (priceEntry.DiscountPrice, priceEntry.NormalPrice);
+                                (priceEntry.NormalPrice, priceEntry.DiscountPrice) = (priceEntry.DiscountPrice.Value, priceEntry.NormalPrice);
                                 isUpdated = true;
                             }
+
                         }
 
                         if (isUpdated)

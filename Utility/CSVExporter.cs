@@ -11,7 +11,7 @@ public static class CSVExporter
         foreach (var kvp in products)
         {
             var product = kvp.Value;
-            var line = $"{EscapeCsvValue(product.Url)};{EscapeCsvValue(product.Name)};{EscapeCsvValue(product.Id)};{product.Price};{(product.OtherPrice.HasValue ? product.OtherPrice.Value.ToString() : "N/A")}";
+            var line = $"{EscapeCsvValue(product.Url)};{EscapeCsvValue(product.Name)};{EscapeCsvValue(product.Id)};{product.NormalPrice};{(product.DiscountPrice.HasValue ? product.DiscountPrice.Value.ToString() : "N/A")}";
             csvContent.AppendLine(line);
         }
 

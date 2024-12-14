@@ -6,13 +6,22 @@ public class ProductAnalysisService
 {
     public bool CanCheckForViolations(DateTime earliestScrapeDate)
     {
-        Console.WriteLine($"Days scraped: {Math.Floor((DateTime.UtcNow - earliestScrapeDate).TotalDays)}");
         return (DateTime.UtcNow - earliestScrapeDate).TotalDays > 5;
     }
 
-    public bool IsProductInViolation(List<Price> priceHistory)
+    public bool IsProductInViolation(List<Price> priceHistory, DateTime earliestScrapeDate)
     {
         var sortedPrices = priceHistory.OrderBy(p => p.Date).ToList();
+
+        // If we have scraped long enough but do not have sufficient price data, flag as violation (new product on market, straight on sale)
+        if (sortedPrices.Count < 14 && CanCheckForViolations(earliestScrapeDate))
+        {
+            var isCurrentlyOnSale = sortedPrices.Any(price => price.DiscountPrice > 0 && price.DiscountPrice < price.NormalPrice);
+            if (isCurrentlyOnSale)
+            {
+                return true;
+            }
+        }
 
         int saleStreak = 0;
         DateTime? lastDiscountDate = null;
@@ -26,7 +35,7 @@ public class ProductAnalysisService
 
                 lastDiscountDate = price.Date;
 
-                if (saleStreak > 14)
+                if (saleStreak > 7)
                 {
                     return true;
                 }
@@ -44,6 +53,7 @@ public class ProductAnalysisService
 
         return false;
     }
+
 
     
     public int CalculateLongestSaleStreak(List<Price> priceHistory)

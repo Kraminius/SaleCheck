@@ -33,7 +33,7 @@ public class DataFactory(IWebsiteRepository websiteRepository)
                 foreach (ProductItem productItem in await page.GetProducts())
                 {
                     productItems.TryAdd(productItem.Name, productItem);
-                    Console.WriteLine(productItem.Name + " - " + productItem.Price);
+                    Console.WriteLine(productItem.Name + " - " + productItem.NormalPrice);
                 }
             }
             catch (Exception ex)

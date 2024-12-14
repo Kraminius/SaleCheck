@@ -24,18 +24,20 @@ public class WebsiteSummaryService
         }
         catch (InvalidOperationException e)
         {
-            Console.WriteLine("Can't get earliest date, using default todays date.");
+            Console.WriteLine("Can't get earliest date, using default today's date.");
         }
 
         // Determine if we have scraped long enough to check for violations
         var canCheckViolations = _productAnalysisService.CanCheckForViolations(earliestDate);
 
         // Count the number of products violating the marketing law
-        var productsViolation = canCheckViolations
-            ? website.Products.Count(p => _productAnalysisService.IsProductInViolation(p.Price))
-            : 0;
+        var productsViolation = 0;
+        if (canCheckViolations)
+        {
+            productsViolation = website.Products.Count(p =>
+                _productAnalysisService.IsProductInViolation(p.Price, earliestDate));
+        }
         Console.WriteLine($"Number of products in violation: {productsViolation}");
-
 
         // Calculate the longest sale streak across all products
         var longestStreak = 0;
@@ -47,7 +49,6 @@ public class WebsiteSummaryService
         {
             Console.WriteLine("Not able to get longest streak. Using 0 as default value");
         }
-        
 
         // Return the WebsiteSummary object
         return new WebsiteSummary

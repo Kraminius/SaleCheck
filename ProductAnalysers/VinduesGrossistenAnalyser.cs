@@ -80,32 +80,46 @@ namespace SaleCheck.Model.Utility.ProductAnalysers
             Html html = new Html(content);
             List<Tag> parents = html.SearchForTags(new Filter().Tag("figcaption").Property("class", "product-item-details"));
             List<ProductItem> productItems = new List<ProductItem>();
+
             foreach (Tag parent in parents)
             {
                 string? id = html.SearchForTag(new Filter().Tag("div").Property("class", "price-box"), parent)?.GetProperty("data-product-id");
                 string? url = html.SearchForTag(new Filter().Tag("a").Property("class", "product-info-link"), parent)?.GetProperty("href");
                 string? name = html.SearchForTag(new Filter().Tag("h3").Property("class", "name"), parent)?.Content?.Trim();
+
                 if (name != null)
                     name += " " + html
                         .SearchForTag(new Filter().Tag("p").Property("class", "additional-description"), parent)
-                        ?.Content?.Trim();//Name was split into two containers
+                        ?.Content?.Trim(); // Name was split into two containers
+
                 decimal price = ParsePrice(html.SearchForTag(new Filter().Tag("div").Property("class", "price"), parent)?.Content?.Trim());
                 decimal discount = ParsePrice(html.SearchForTag(new Filter().Tag("div").Property("class", "price_oprice_with_discountld"), parent)?.Content?.Trim());
+
                 if (id == null || url == null || name == null) continue;
-                if(discount == -1) productItems.Add(new ProductItem(url, name, id, price));
+
+                if (discount == -1)
+                {
+                    // No discount present, only normal price
+                    productItems.Add(new ProductItem(url, name, id, price));
+                }
                 else
                 {
+                    // Assign the larger value as NormalPrice and the smaller as DiscountPrice
+                    decimal normalPrice = Math.Max(price, discount);
+                    decimal discountPrice = Math.Min(price, discount);
+
                     productItems.Add(new ProductItem(
                         url,
                         name,
                         id,
-                        Math.Max(price, discount), // Always set the larger value as normalPrice
-                        Math.Min(price, discount)  // Always set the smaller value as discountPrice
+                        normalPrice,
+                        discountPrice
                     ));
                 }
             }
             return productItems;
         }
+
 
         
     }

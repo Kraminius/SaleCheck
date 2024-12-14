@@ -44,24 +44,12 @@ public class DataConvertions
     }
     public static Price PriceFromProductItem(ProductItem item)
     {
-        
-        if (item.OtherPrice != null)
+        return new Price
         {
-            decimal normalPrice = item.OtherPrice ?? 0;
-            return new Price
-            {
-                Date = DateTime.Now,
-                DiscountPrice = Decimal.ToDouble(item.Price),
-                NormalPrice = Decimal.ToDouble(normalPrice)
-            };
-        }
-        else
-        {
-            return new Price
-            {
-                Date = DateTime.Now,
-                NormalPrice = Decimal.ToDouble(item.Price)
-            };
-        }
+            Date = DateTime.Now,
+            NormalPrice = Decimal.ToDouble(item.NormalPrice),
+            DiscountPrice = item.DiscountPrice.HasValue ? Decimal.ToDouble(item.DiscountPrice.Value) : null
+        };
     }
+
 }
